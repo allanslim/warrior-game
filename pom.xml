@@ -75,11 +75,29 @@
                 <version>1.4.5</version>
                 <executions>
                     <execution>
-                        <id>title-update</id>
+                        <id>warrior-server</id>
                         <configuration>
                             <mainClass>com.ahujalimtamayo.project.WarriorServer</mainClass>
                             <attachToBuild>true</attachToBuild>
                             <filename>warrior-server.jar</filename>
+                            <!-- Optional -->
+                            <onejarVersion>0.97</onejarVersion>
+
+                            <!-- Optional, default is false -->
+                            <attachToBuild>true</attachToBuild>
+                            <!-- Optional, default is "onejar" -->
+                            <classifier>onejar</classifier>
+                        </configuration>
+                        <goals>
+                            <goal>one-jar</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>warrior-client</id>
+                        <configuration>
+                            <mainClass>com.ahujalimtamayo.project.WarriorClient</mainClass>
+                            <attachToBuild>true</attachToBuild>
+                            <filename>warrior-client.jar</filename>
                             <!-- Optional -->
                             <onejarVersion>0.97</onejarVersion>
 

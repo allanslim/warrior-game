@@ -10,6 +10,11 @@ Team
 * Zailyn Tamayo
 
 
+Pre-requisite
+--------
+* JDK 7 or higher
+* maven
+
 
 How to run server:
 ```

@@ -19,14 +19,14 @@ Pre-requisite
 How to run server:
 ```
 
-mvn clean install
-
-java -jar  warrior-server.jar
+\> mvn clean install
+\> cd target
+\> java -jar  warrior-server.jar
 ```
 
 
 How to run client:
 ```
 
-java -jar warrior-client.jar
+\> java -jar warrior-client.jar
 ```

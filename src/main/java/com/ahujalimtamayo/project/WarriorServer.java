@@ -11,29 +11,25 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class WarriorServer {
-    // a unique ID for each connection
-    private static int uniqueId;
-    // an ArrayList to keep the list of the Client
-    private ArrayList<ClientThread> al;
 
-    // to display time
-    private SimpleDateFormat sdf;
-    // the port number to listen for connection
+    private static int uniqueIdPerConnection;
+
+    private ArrayList<ClientThread> clientThreads;
+
+    private SimpleDateFormat displayTime;
+
     private int port;
-    // the boolean that will be turned of to stop the server
+
     private boolean keepGoing;
 
 
-    /*
-     *  server constructor that receive the port to listen to for connection as parameter
-     *  in console
-     */
+
     public WarriorServer(int port) {
         this.port = port;
-        // to display hh:mm:ss
-        sdf = new SimpleDateFormat("HH:mm:ss");
-        // ArrayList for the Client list
-        al = new ArrayList<ClientThread>();
+
+        displayTime = new SimpleDateFormat("HH:mm:ss");
+
+        clientThreads = new ArrayList<ClientThread>();
     }
 
 
@@ -44,24 +40,23 @@ public class WarriorServer {
             // the socket used by the server
             ServerSocket serverSocket = new ServerSocket(port);
 
-            // infinite loop to wait for connections
             while (keepGoing) {
-                // format message saying we are waiting
-                display("Server waiting for Clients on port " + port + ".");
+                displayEvent("Server waiting for Clients on port " + port + ".");
 
-                Socket socket = serverSocket.accept();    // accept connection
+                Socket socket = serverSocket.accept();
+
                 // if I was asked to stop
                 if (!keepGoing)
                     break;
-                ClientThread t = new ClientThread(socket);  // make a thread of it
-                al.add(t);                                    // save it in the ArrayList
+                ClientThread t = new ClientThread(socket);
+                clientThreads.add(t);
                 t.start();
             }
             // I was asked to stop
             try {
                 serverSocket.close();
-                for (int i = 0; i < al.size(); ++i) {
-                    ClientThread tc = al.get(i);
+                for (int i = 0; i < clientThreads.size(); ++i) {
+                    ClientThread tc = clientThreads.get(i);
                     try {
                         tc.sInput.close();
                         tc.sOutput.close();
@@ -71,13 +66,13 @@ public class WarriorServer {
                     }
                 }
             } catch (Exception e) {
-                display("Exception closing the server and clients: " + e);
+                displayEvent("Exception closing the server and clients: " + e);
             }
         }
-        // something went bad
+
         catch (IOException e) {
-            String msg = sdf.format(new Date()) + " Exception on new ServerSocket: " + e + "\n";
-            display(msg);
+            String msg = displayTime.format(new Date()) + " Exception on new ServerSocket: " + e + "\n";
+            displayEvent(msg);
         }
     }
 
@@ -95,33 +90,30 @@ public class WarriorServer {
         }
     }
 
-    /*
-     * Display an event (not a message) to the console or the GUI
-     */
-    private void display(String msg) {
-        String time = sdf.format(new Date()) + " " + msg;
+
+    private void displayEvent(String msg) {
+        String time = displayTime.format(new Date()) + " " + msg;
         System.out.println(time);
     }
 
-    /*
-     *  to broadcast a message to all Clients
-     */
-    private synchronized void broadcast(String message) {
-        // add HH:mm:ss and \n to the message
-        String time = sdf.format(new Date());
+
+    private synchronized void broadcastMessageToAllClients(String message) {
+
+        String time = displayTime.format(new Date());
+
         String messageLf = time + " " + message + "\n";
-        // display message on console or GUI
+
         System.out.print(messageLf);
 
 
         // we loop in reverse order in case we would have to remove a Client
         // because it has disconnected
-        for (int i = al.size(); --i >= 0; ) {
-            ClientThread ct = al.get(i);
+        for (int i = clientThreads.size(); --i >= 0; ) {
+            ClientThread ct = clientThreads.get(i);
             // try to write to the Client if it fails remove it from the list
             if (!ct.writeMsg(messageLf)) {
-                al.remove(i);
-                display("Disconnected Client " + ct.username + " removed from list.");
+                clientThreads.remove(i);
+                displayEvent("Disconnected Client " + ct.username + " removed from list.");
             }
         }
     }
@@ -129,11 +121,11 @@ public class WarriorServer {
     // for a client who logoff using the LOGOUT message
     synchronized void remove(int id) {
         // scan the array list until we found the Id
-        for (int i = 0; i < al.size(); ++i) {
-            ClientThread ct = al.get(i);
+        for (int i = 0; i < clientThreads.size(); ++i) {
+            ClientThread ct = clientThreads.get(i);
             // found it
-            if (ct.id == id) {
-                al.remove(i);
+            if (ct.threadId == id) {
+                clientThreads.remove(i);
                 return;
             }
         }
@@ -148,6 +140,7 @@ public class WarriorServer {
     public static void main(String[] args) {
         // start server on port 1500 unless a PortNumber is specified
         int portNumber = 1500;
+
         switch (args.length) {
             case 1:
                 try {
@@ -169,39 +162,43 @@ public class WarriorServer {
         server.start();
     }
 
-    /**
-     * One instance of this thread will run for each client
-     */
+
     class ClientThread extends Thread {
-        // the socket where to listen/talk
+
         Socket socket;
+
         ObjectInputStream sInput;
+
         ObjectOutputStream sOutput;
-        // my unique id (easier for deconnection)
-        int id;
-        // the Username of the Client
+
+       int threadId;
+
         String username;
+
         // the only type of message a will receive
         ChatMessage cm;
         // the date I connect
         String date;
 
-        // Constructore
+
         ClientThread(Socket socket) {
-            // a unique id
-            id = ++uniqueId;
+            // a unique threadId
+            threadId = ++uniqueIdPerConnection;
+
             this.socket = socket;
+
 			/* Creating both Data Stream */
             System.out.println("Thread trying to create Object Input/Output Streams");
             try {
                 // create output first
                 sOutput = new ObjectOutputStream(socket.getOutputStream());
                 sInput = new ObjectInputStream(socket.getInputStream());
+
                 // read the username
                 username = (String) sInput.readObject();
-                display(username + " just connected.");
+                displayEvent(username + " just connected.");
             } catch (IOException e) {
-                display("Exception creating new Input/output Streams: " + e);
+                displayEvent("Exception creating new Input/output Streams: " + e);
                 return;
             }
             // have to catch ClassNotFoundException
@@ -220,7 +217,7 @@ public class WarriorServer {
                 try {
                     cm = (ChatMessage) sInput.readObject();
                 } catch (IOException e) {
-                    display(username + " Exception reading Streams: " + e);
+                    displayEvent(username + " Exception reading Streams: " + e);
                     break;
                 } catch (ClassNotFoundException e2) {
                     break;
@@ -232,17 +229,17 @@ public class WarriorServer {
                 switch (cm.getType()) {
 
                     case ChatMessage.MESSAGE:
-                        broadcast(username + ": " + message);
+                        broadcastMessageToAllClients(username + ": " + message);
                         break;
                     case ChatMessage.LOGOUT:
-                        display(username + " disconnected with a LOGOUT message.");
+                        displayEvent(username + " disconnected with a LOGOUT message.");
                         keepGoing = false;
                         break;
                     case ChatMessage.WHOISIN:
-                        writeMsg("List of the users connected at " + sdf.format(new Date()) + "\n");
-                        // scan al the users connected
-                        for (int i = 0; i < al.size(); ++i) {
-                            ClientThread ct = al.get(i);
+                        writeMsg("List of the users connected at " + displayTime.format(new Date()) + "\n");
+
+                        for (int i = 0; i < clientThreads.size(); ++i) {
+                            ClientThread ct = clientThreads.get(i);
                             writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
                         }
                         break;
@@ -250,7 +247,7 @@ public class WarriorServer {
             }
             // remove myself from the arrayList containing the list of the
             // connected Clients
-            remove(id);
+            remove(threadId);
             close();
         }
 
@@ -284,8 +281,8 @@ public class WarriorServer {
             }
             // if an error occurs, do not abort just inform the user
             catch (IOException e) {
-                display("Error sending message to " + username);
-                display(e.toString());
+                displayEvent("Error sending message to " + username);
+                displayEvent(e.toString());
             }
             return true;
         }

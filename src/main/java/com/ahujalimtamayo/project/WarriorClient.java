@@ -126,7 +126,7 @@ public class WarriorClient {
      * are eqquivalent
      *
      * In console mode, if an error occurs the program simply stops
-     * when a GUI id used, the GUI is informed of the disconnection
+     * when a GUI threadId used, the GUI is informed of the disconnection
      */
     public static void main(String[] args) {
         // default values

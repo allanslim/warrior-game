@@ -16,7 +16,7 @@ Pre-requisite
 * maven
 
 
-How to run server:
+How to run the server:
 ```
 
 \> mvn clean install
@@ -25,7 +25,7 @@ How to run server:
 ```
 
 
-How to run client:
+How to run the client:
 ```
 
 \> java -jar warrior-client.jar

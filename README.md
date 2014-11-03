@@ -16,17 +16,17 @@ Pre-requisite
 * maven
 
 
-How to run server:
+How to run the server:
 ```
 
-mvn clean install
-
-java -jar  warrior-server.jar
+\> mvn clean install
+\> cd target
+\> java -jar  warrior-server.jar
 ```
 
 
-How to run client:
+How to run the client:
 ```
 
-java -jar warrior-client.jar
+\> java -jar warrior-client.jar
 ```

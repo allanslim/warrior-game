@@ -1,5 +1,7 @@
-package com.ahujalimtamayo.project;
+package com.ahujalimtamayo.project.server;
 
+
+import com.ahujalimtamayo.project.common.ChatMessage;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -12,6 +14,7 @@ import java.util.Date;
 
 public class WarriorServer {
 
+    public static final int DEFAULT_PORT = 1500;
     private static int uniqueIdPerConnection;
 
     private ArrayList<ClientThread> clientThreads;
@@ -20,9 +23,7 @@ public class WarriorServer {
 
     private int port;
 
-    private boolean keepGoing;
-
-
+    private boolean keepGoing = true;
 
     public WarriorServer(int port) {
         this.port = port;
@@ -33,9 +34,34 @@ public class WarriorServer {
     }
 
 
+    public static void main(String[] args) {
+
+        int portNumber = DEFAULT_PORT;
+
+        switch (args.length) {
+            case 1:
+                try {
+                    portNumber = Integer.parseInt(args[0]);
+                } catch (Exception e) {
+                    System.out.println("Invalid port number.");
+                    System.out.println("Usage is: > java -jar WarriorServer [portNumber]");
+                    return;
+                }
+            case 0:
+                break;
+            default:
+                System.out.println("Usage is: > java -jar WarriorServer [portNumber]");
+                return;
+
+        }
+
+        WarriorServer server = new WarriorServer(portNumber);
+        server.start();
+    }
+
+
     public void start() {
-        keepGoing = true;
-        /* create socket server and wait for connection requests */
+
         try {
             // the socket used by the server
             ServerSocket serverSocket = new ServerSocket(port);
@@ -58,8 +84,8 @@ public class WarriorServer {
                 for (int i = 0; i < clientThreads.size(); ++i) {
                     ClientThread tc = clientThreads.get(i);
                     try {
-                        tc.sInput.close();
-                        tc.sOutput.close();
+                        tc.inputStream.close();
+                        tc.outputStream.close();
                         tc.socket.close();
                     } catch (IOException ioE) {
                         // not much I can do
@@ -68,27 +94,12 @@ public class WarriorServer {
             } catch (Exception e) {
                 displayEvent("Exception closing the server and clients: " + e);
             }
-        }
-
-        catch (IOException e) {
+        } catch (IOException e) {
             String msg = displayTime.format(new Date()) + " Exception on new ServerSocket: " + e + "\n";
             displayEvent(msg);
         }
     }
 
-    /*
-     * For the GUI to stop the server
-     */
-    protected void stop() {
-        keepGoing = false;
-        // connect to myself as Client to exit statement
-        // Socket socket = serverSocket.accept();
-        try {
-            new Socket("localhost", port);
-        } catch (Exception e) {
-            // nothing I can really do
-        }
-    }
 
 
     private void displayEvent(String msg) {
@@ -131,153 +142,106 @@ public class WarriorServer {
         }
     }
 
-    /*
-     *  To run as a console application just open a console window and:
-     * > java Server
-     * > java Server portNumber
-     * If the port number is not specified 1500 is used
-     */
-    public static void main(String[] args) {
-        // start server on port 1500 unless a PortNumber is specified
-        int portNumber = 1500;
-
-        switch (args.length) {
-            case 1:
-                try {
-                    portNumber = Integer.parseInt(args[0]);
-                } catch (Exception e) {
-                    System.out.println("Invalid port number.");
-                    System.out.println("Usage is: > java Server [portNumber]");
-                    return;
-                }
-            case 0:
-                break;
-            default:
-                System.out.println("Usage is: > java Server [portNumber]");
-                return;
-
-        }
-        // create a server object and start it
-        WarriorServer server = new WarriorServer(portNumber);
-        server.start();
-    }
-
 
     class ClientThread extends Thread {
 
-        Socket socket;
+        private Socket socket;
 
-        ObjectInputStream sInput;
+        private ObjectInputStream inputStream;
 
-        ObjectOutputStream sOutput;
+        private ObjectOutputStream outputStream;
 
-       int threadId;
+        private int threadId;
 
-        String username;
+        private String username;
 
-        // the only type of message a will receive
-        ChatMessage cm;
-        // the date I connect
-        String date;
+        private ChatMessage chatMessage;
+
+        private String dateInString;
 
 
         ClientThread(Socket socket) {
-            // a unique threadId
+
             threadId = ++uniqueIdPerConnection;
 
             this.socket = socket;
 
-			/* Creating both Data Stream */
+
             System.out.println("Thread trying to create Object Input/Output Streams");
             try {
-                // create output first
-                sOutput = new ObjectOutputStream(socket.getOutputStream());
-                sInput = new ObjectInputStream(socket.getInputStream());
 
-                // read the username
-                username = (String) sInput.readObject();
+                outputStream = new ObjectOutputStream(socket.getOutputStream());
+                inputStream = new ObjectInputStream(socket.getInputStream());
+                username = (String) inputStream.readObject();
                 displayEvent(username + " just connected.");
-            } catch (IOException e) {
+
+            } catch (Exception e) {
                 displayEvent("Exception creating new Input/output Streams: " + e);
                 return;
             }
-            // have to catch ClassNotFoundException
-            // but I read a String, I am sure it will work
-            catch (ClassNotFoundException e) {
-            }
-            date = new Date().toString() + "\n";
+
+            dateInString = new Date().toString() + "\n";
         }
 
-        // what will run forever
+
         public void run() {
-            // to loop until LOGOUT
+
             boolean keepGoing = true;
+
             while (keepGoing) {
-                // read a String (which is an object)
                 try {
-                    cm = (ChatMessage) sInput.readObject();
-                } catch (IOException e) {
+                    chatMessage = (ChatMessage) inputStream.readObject();
+                } catch (Exception e) {
                     displayEvent(username + " Exception reading Streams: " + e);
                     break;
-                } catch (ClassNotFoundException e2) {
-                    break;
                 }
-                // the messaage part of the ChatMessage
-                String message = cm.getMessage();
 
-                // Switch on the type of message receive
-                switch (cm.getType()) {
+                switch (chatMessage.getMessageType()) {
 
-                    case ChatMessage.MESSAGE:
-                        broadcastMessageToAllClients(username + ": " + message);
+                    case MESSAGE:
+                        broadcastMessageToAllClients(username + ": " + chatMessage.getMessage());
                         break;
-                    case ChatMessage.LOGOUT:
+                    case LOGOUT:
                         displayEvent(username + " disconnected with a LOGOUT message.");
                         keepGoing = false;
                         break;
-                    case ChatMessage.WHOISIN:
+                    case WHOISIN:
                         writeMsg("List of the users connected at " + displayTime.format(new Date()) + "\n");
 
                         for (int i = 0; i < clientThreads.size(); ++i) {
                             ClientThread ct = clientThreads.get(i);
-                            writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
+                            writeMsg((i + 1) + ") " + ct.username + " since " + ct.dateInString);
                         }
                         break;
                 }
             }
+
             // remove myself from the arrayList containing the list of the
             // connected Clients
             remove(threadId);
-            close();
+            closeAllResource();
         }
 
-        // try to close everything
-        private void close() {
-            // try to close the connection
+
+        private void closeAllResource() {
             try {
-                if (sOutput != null) sOutput.close();
-            } catch (Exception e) {}
-            try {
-                if (sInput != null) sInput.close();
-            } catch (Exception e) {}
-            ;
-            try {
+                if (outputStream != null) outputStream.close();
+                if (inputStream != null) inputStream.close();
                 if (socket != null) socket.close();
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                displayEvent(username + " Error closing resources: " + e);
+            }
         }
 
-        /*
-         * Write a String to the Client output stream
-         */
         private boolean writeMsg(String msg) {
-            // if Client is still connected send the message to it
+
             if (!socket.isConnected()) {
-                close();
+                closeAllResource();
                 return false;
             }
-            // write the message to the stream
+
             try {
-                sOutput.writeObject(msg);
+                outputStream.writeObject(msg);
             }
             // if an error occurs, do not abort just inform the user
             catch (IOException e) {

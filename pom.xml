@@ -77,7 +77,7 @@
                     <execution>
                         <id>warrior-server</id>
                         <configuration>
-                            <mainClass>com.ahujalimtamayo.project.WarriorServer</mainClass>
+                            <mainClass>com.ahujalimtamayo.project.server.WarriorServer</mainClass>
                             <attachToBuild>true</attachToBuild>
                             <filename>warrior-server.jar</filename>
                             <!-- Optional -->
@@ -95,7 +95,7 @@
                     <execution>
                         <id>warrior-client</id>
                         <configuration>
-                            <mainClass>com.ahujalimtamayo.project.WarriorClient</mainClass>
+                            <mainClass>com.ahujalimtamayo.project.client.WarriorClient</mainClass>
                             <attachToBuild>true</attachToBuild>
                             <filename>warrior-client.jar</filename>
                             <!-- Optional -->

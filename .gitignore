@@ -41,6 +41,8 @@ target-eclipse
 
 # Package Files #
 *.jar
+!dist
+!dist/*.jar
 *.war
 *.ear
 

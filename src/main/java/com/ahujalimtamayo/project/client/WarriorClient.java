@@ -33,7 +33,7 @@ public class WarriorClient {
         try {
             connectToServer();
 
-            createInputOutStream();
+            createInputOutStreams();
 
             new ListenFromServer().start();
 
@@ -62,7 +62,7 @@ public class WarriorClient {
         }
     }
 
-    private void createInputOutStream() throws IOStreamCreationException {
+    private void createInputOutStreams() throws IOStreamCreationException {
         try {
             inputStream = new ObjectInputStream(socket.getInputStream());
             outputStream = new ObjectOutputStream(socket.getOutputStream());

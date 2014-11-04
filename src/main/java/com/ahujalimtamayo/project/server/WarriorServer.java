@@ -214,7 +214,7 @@ public class WarriorServer {
                 }
             }
 
-            // removeClientFromTheList myself from the arrayList containing the list of the
+            // remove myself from the arrayList containing the list of the
             // connected Clients
             removeClientFromTheList(threadId);
             closeAllResource();

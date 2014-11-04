@@ -17,9 +17,9 @@ public class WarriorServer {
     public static final int DEFAULT_PORT = 1500;
     private static int uniqueIdPerConnection;
 
-    private ArrayList<ClientThread> clientThreads;
+    private ArrayList<ClientThread> clientThreads = new ArrayList<ClientThread>();
 
-    private SimpleDateFormat displayTime;
+    private SimpleDateFormat displayTime = new SimpleDateFormat("HH:mm:ss");
 
     private int port;
 
@@ -27,10 +27,6 @@ public class WarriorServer {
 
     public WarriorServer(int port) {
         this.port = port;
-
-        displayTime = new SimpleDateFormat("HH:mm:ss");
-
-        clientThreads = new ArrayList<ClientThread>();
     }
 
 
@@ -52,7 +48,6 @@ public class WarriorServer {
             default:
                 System.out.println("Usage is: > java -jar WarriorServer [portNumber]");
                 return;
-
         }
 
         WarriorServer server = new WarriorServer(portNumber);
@@ -74,32 +69,34 @@ public class WarriorServer {
                 // if I was asked to stop
                 if (!keepGoing)
                     break;
-                ClientThread t = new ClientThread(socket);
-                clientThreads.add(t);
-                t.start();
+
+                ClientThread clientThread = new ClientThread(socket);
+                clientThreads.add(clientThread);
+
+                clientThread.start();
             }
+
             // I was asked to stop
-            try {
-                serverSocket.close();
-                for (int i = 0; i < clientThreads.size(); ++i) {
-                    ClientThread tc = clientThreads.get(i);
-                    try {
-                        tc.inputStream.close();
-                        tc.outputStream.close();
-                        tc.socket.close();
-                    } catch (IOException ioE) {
-                        // not much I can do
-                    }
-                }
-            } catch (Exception e) {
-                displayEvent("Exception closing the server and clients: " + e);
-            }
+            closeServerAndClientSockets(serverSocket);
+
         } catch (IOException e) {
             String msg = displayTime.format(new Date()) + " Exception on new ServerSocket: " + e + "\n";
             displayEvent(msg);
         }
     }
 
+    private void closeServerAndClientSockets(ServerSocket serverSocket) {
+        try {
+            serverSocket.close();
+
+            for (int i = 0; i < clientThreads.size(); ++i) {
+                ClientThread clientThread = clientThreads.get(i);
+                clientThread.closeAllResource();
+            }
+        } catch (Exception e) {
+            displayEvent("Exception closing the server and clients: " + e);
+        }
+    }
 
 
     private void displayEvent(String msg) {
@@ -112,17 +109,17 @@ public class WarriorServer {
 
         String time = displayTime.format(new Date());
 
-        String messageLf = time + " " + message + "\n";
+        String timedMessage = time + " " + message + "\n";
 
-        System.out.print(messageLf);
+        System.out.print(timedMessage);
 
 
         // we loop in reverse order in case we would have to remove a Client
         // because it has disconnected
         for (int i = clientThreads.size(); --i >= 0; ) {
             ClientThread ct = clientThreads.get(i);
-            // try to write to the Client if it fails remove it from the list
-            if (!ct.writeMsg(messageLf)) {
+            // try to write to the Client if it fails removeClientFromTheList it from the list
+            if (!ct.writeMsg(timedMessage)) {
                 clientThreads.remove(i);
                 displayEvent("Disconnected Client " + ct.username + " removed from list.");
             }
@@ -130,9 +127,10 @@ public class WarriorServer {
     }
 
     // for a client who logoff using the LOGOUT message
-    synchronized void remove(int id) {
-        // scan the array list until we found the Id
+    synchronized void removeClientFromTheList(int id) {
+
         for (int i = 0; i < clientThreads.size(); ++i) {
+
             ClientThread ct = clientThreads.get(i);
             // found it
             if (ct.threadId == id) {
@@ -216,14 +214,14 @@ public class WarriorServer {
                 }
             }
 
-            // remove myself from the arrayList containing the list of the
+            // removeClientFromTheList myself from the arrayList containing the list of the
             // connected Clients
-            remove(threadId);
+            removeClientFromTheList(threadId);
             closeAllResource();
         }
 
 
-        private void closeAllResource() {
+        public void closeAllResource() {
             try {
                 if (outputStream != null) outputStream.close();
                 if (inputStream != null) inputStream.close();
@@ -241,10 +239,11 @@ public class WarriorServer {
             }
 
             try {
+
                 outputStream.writeObject(msg);
-            }
-            // if an error occurs, do not abort just inform the user
-            catch (IOException e) {
+
+            } catch (IOException e) {
+                // if an error occurs, do not abort just inform the user
                 displayEvent("Error sending message to " + username);
                 displayEvent(e.toString());
             }

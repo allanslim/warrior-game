@@ -204,26 +204,7 @@ public class WarriorServer {
                         broadcastMessageToAllClients(username + " loaded: " + warrior.getName());
                         break;
                     case WHOISIN:
-                        String warriorName = chatMessage.getMessage();
-
-                        writeMsg("\n========= List of the users connected at " + displayTime.format(new Date()) + " =========\n" );
-
-                        for (int i = 0; i < clientThreads.size(); i++) {
-                            ClientThread ct = clientThreads.get(i);
-
-
-                            if (ct.warrior != null) {
-
-                                writeMsg((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString + " has Warrior: " + ct.warrior.getName() + "\n");
-
-                                if (StringUtils.equals(ct.warrior.getName(), warriorName)) {
-                                    writeMsg(ct.warrior.toString());
-                                }
-                            } else {
-                                writeMsg((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString);
-                            }
-
-                        }
+                        displayWarriorInfo(chatMessage.getMessage());
                         break;
                 }
             }
@@ -235,6 +216,26 @@ public class WarriorServer {
 
             closeAllResource();
 
+        }
+
+        private void displayWarriorInfo(String warriorName) {
+            writeMsg("\n========= List of the users connected at " + displayTime.format(new Date()) + " =========\n" );
+
+            for (int i = 0; i < clientThreads.size(); i++) {
+                ClientThread ct = clientThreads.get(i);
+
+                if (ct.warrior != null) {
+
+                    writeMsg((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString + " has Warrior: " + ct.warrior.getName() + "\n");
+
+                    if (StringUtils.equals(ct.warrior.getName(), warriorName)) {
+                        writeMsg(ct.warrior.toString());
+                    }
+                } else {
+                    writeMsg((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString);
+                }
+
+            }
         }
 
 

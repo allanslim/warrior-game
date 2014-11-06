@@ -20,12 +20,13 @@ public class WarriorClient {
     private String server, username;
     private int port;
 
+    private static Warrior warrior;
 
-    public WarriorClient(String server, int port, String username) {
-        this.server = server;
-        this.port = port;
-        this.username = username;
 
+    public WarriorClient(ConnectionInformation connectionInformation) {
+        this.server = connectionInformation.getServerAddress();
+        this.port = connectionInformation.getPortNumber();
+        this.username = connectionInformation.getUserName();
     }
 
     public boolean start() {
@@ -41,7 +42,7 @@ public class WarriorClient {
         } catch (ServerConnectionErrorException e) {
             System.out.println("Error connecting to server:" + e);
             return false;
-        } catch( IOStreamCreationException e) {
+        } catch (IOStreamCreationException e) {
             System.out.println("error creating new Input/output Streams: " + e);
             return false;
         } catch (MessageSendingException e) {
@@ -115,39 +116,14 @@ public class WarriorClient {
      */
     public static void main(String[] args) {
         // default values
-        int portNumber = 1500;
-        String serverAddress = "localhost";
-        String userName = "Anonymous";
 
+        ConnectionInformation connectionInformation = initConnectionInformation(args);
 
-
-        switch (args.length) {
-            // > javac Client username portNumber serverAddr
-            case 3:
-                serverAddress = args[2];
-                // > javac Client username portNumber
-            case 2:
-                try {
-                    portNumber = Integer.parseInt(args[1]);
-                } catch (Exception e) {
-                    System.out.println("Invalid port number.");
-                    System.out.println("Usage is: > java Client [username] [portNumber] [serverAddress]");
-                    return;
-                }
-                // > javac Client username
-            case 1:
-                userName = args[0];
-                // > java Client
-            case 0:
-                break;
-            // invalid number of arguments
-            default:
-                System.out.println("Usage is: > java Client [username] [portNumber] {serverAddress]");
-                return;
+        if(connectionInformation == null) {
+            return;
         }
 
-
-        WarriorClient client = new WarriorClient(serverAddress, portNumber, userName);
+        WarriorClient client = new WarriorClient(connectionInformation);
 
         if (!client.start())
             return;
@@ -155,34 +131,71 @@ public class WarriorClient {
         Scanner scan = new Scanner(System.in);
 
         System.out.println(DisplayUtil.getHelpMessage());
+
         while (true) {
             System.out.print("> ");
 
             String userInputMessage = scan.nextLine();
 
-            if (userInputMessage.equalsIgnoreCase(MessageType.LOGOUT.getShortValue())) {
-
-                client.sendMessage(new ChatMessage(MessageType.LOGOUT, ""));
-                break;
-
-            } else if(userInputMessage.contains(MessageType.LOAD_WARRIOR.getShortValue())) {
-
-                loadWarrior(client, userInputMessage);
-
-            } else if(userInputMessage.contains(MessageType.HELP.getShortValue())) {
-
-                System.out.println(DisplayUtil.getHelpMessage());
-            }
-            else if (userInputMessage.contains(MessageType.WHOISIN.getShortValue())) {
-
-                processWhoIsInCommand(client, userInputMessage);
-
-            } else {
-                client.sendMessage(new ChatMessage(MessageType.MESSAGE, userInputMessage));
-            }
+            if (processInputMessage(client, userInputMessage)) break;
         }
 
         client.disconnect();
+    }
+
+    private static boolean processInputMessage(WarriorClient client, String userInputMessage) {
+        if (userInputMessage.equalsIgnoreCase(MessageType.LOGOUT.getShortValue())) {
+
+            client.sendMessage(new ChatMessage(MessageType.LOGOUT, ""));
+            return true;
+
+        } else if (userInputMessage.contains(MessageType.LOAD_WARRIOR.getShortValue())) {
+
+            loadWarrior(client, userInputMessage);
+
+        } else if (userInputMessage.contains(MessageType.HELP.getShortValue())) {
+
+            System.out.println(DisplayUtil.getHelpMessage());
+
+        } else if (userInputMessage.contains(MessageType.WHOISIN.getShortValue())) {
+
+            processWhoIsInCommand(client, userInputMessage);
+
+        } else {
+            client.sendMessage(new ChatMessage(MessageType.MESSAGE, userInputMessage));
+        }
+        return false;
+    }
+
+    private static ConnectionInformation initConnectionInformation(String[] args) {
+
+        ConnectionInformation connectionInformation = new ConnectionInformation();
+        switch (args.length) {
+             // > javac Client username portNumber serverAddr
+             case 3:
+                 connectionInformation.setServerAddress(args[2]);
+                 // > javac Client username portNumber
+             case 2:
+                 try {
+                     connectionInformation.setPortNumber(Integer.parseInt(args[1]));
+                 } catch (Exception e) {
+                     System.out.println("Invalid port number.");
+                     System.out.println("Usage is: > java Client [username] [portNumber] [serverAddress]");
+                     return null;
+                 }
+                 // > javac Client username
+             case 1:
+                 connectionInformation.setUserName(args[0]);
+                 // > java Client
+             case 0:
+                 break;
+             // invalid number of arguments
+             default:
+                 System.out.println("Usage is: > java Client [username] [portNumber] {serverAddress]");
+                 return null;
+         }
+
+        return connectionInformation;
     }
 
     private static void processWhoIsInCommand(WarriorClient client, String userInputMessage) {
@@ -195,9 +208,9 @@ public class WarriorClient {
     private static void loadWarrior(WarriorClient client, String message) {
         String path = extractValue(message);
 
-        if(StringUtils.isNotBlank(path)) {
+        if (StringUtils.isNotBlank(path)) {
             try {
-                Warrior warrior = XmlUtil.readWarriorFromFile(path);
+                warrior = XmlUtil.readWarriorFromFile(path);
 
                 DisplayUtil.displayEvent(String.format("warrior [%s] loaded.", warrior));
 
@@ -205,7 +218,7 @@ public class WarriorClient {
             } catch (IOException e) {
                 DisplayUtil.displayEvent("error loading warrior. please check file.");
             }
-        }else {
+        } else {
             DisplayUtil.displayEvent("You need to specify the fully qualified path of the warrior.");
         }
 

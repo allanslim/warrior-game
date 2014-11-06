@@ -1,0 +1,43 @@
+<Warrior>
+  <name>Superman</name>
+  <description>Faster the a speeding bullet.</description>
+  <healthLevel>
+    <currentHealth>100</currentHealth>
+  </healthLevel>
+  <placeOfOrigin>Krypton</placeOfOrigin>
+  <attacks>
+    <attacks>
+      <name>kick</name>
+      <actionPoints>-1</actionPoints>
+      <type>ATTACK</type>
+    </attacks>
+    <attacks>
+      <name>punch</name>
+      <actionPoints>-1</actionPoints>
+      <type>ATTACK</type>
+    </attacks>
+    <attacks>
+      <name>laser vision</name>
+      <actionPoints>-3</actionPoints>
+      <type>ATTACK</type>
+    </attacks>
+  </attacks>
+  <defenses>
+    <defenses>
+      <name>parry</name>
+      <actionPoints>1</actionPoints>
+      <type>DEFENSE</type>
+    </defenses>
+    <defenses>
+      <name>fly</name>
+      <actionPoints>4</actionPoints>
+      <type>DEFENSE</type>
+    </defenses>
+    <defenses>
+      <name>block</name>
+      <actionPoints>3</actionPoints>
+      <type>DEFENSE</type>
+    </defenses>
+  </defenses>
+  <heathPoints>100</heathPoints>
+</Warrior>

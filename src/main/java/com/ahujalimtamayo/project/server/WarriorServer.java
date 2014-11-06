@@ -2,6 +2,9 @@ package com.ahujalimtamayo.project.server;
 
 
 import com.ahujalimtamayo.project.common.ChatMessage;
+import com.ahujalimtamayo.project.common.DisplayUtil;
+import com.ahujalimtamayo.project.model.Warrior;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -62,7 +65,7 @@ public class WarriorServer {
             ServerSocket serverSocket = new ServerSocket(port);
 
             while (keepGoing) {
-                displayEvent("Server waiting for Clients on port " + port + ".");
+                DisplayUtil.displayEvent("Server waiting for Clients on port " + port + ".");
 
                 Socket socket = serverSocket.accept();
 
@@ -81,7 +84,7 @@ public class WarriorServer {
 
         } catch (IOException e) {
             String msg = displayTime.format(new Date()) + " Exception on new ServerSocket: " + e + "\n";
-            displayEvent(msg);
+            DisplayUtil.displayEvent(msg);
         }
     }
 
@@ -94,14 +97,8 @@ public class WarriorServer {
                 clientThread.closeAllResource();
             }
         } catch (Exception e) {
-            displayEvent("Exception closing the server and clients: " + e);
+            DisplayUtil.displayEvent("Exception closing the server and clients: " + e);
         }
-    }
-
-
-    private void displayEvent(String msg) {
-        String time = displayTime.format(new Date()) + " " + msg;
-        System.out.println(time);
     }
 
 
@@ -121,7 +118,7 @@ public class WarriorServer {
             // try to write to the Client if it fails removeClientFromTheList it from the list
             if (!ct.writeMsg(timedMessage)) {
                 clientThreads.remove(i);
-                displayEvent("Disconnected Client " + ct.username + " removed from list.");
+                DisplayUtil.displayEvent("Disconnected Client " + ct.username + " removed from list.");
             }
         }
     }
@@ -157,6 +154,8 @@ public class WarriorServer {
 
         private String dateInString;
 
+        private Warrior warrior;
+
 
         ClientThread(Socket socket) {
 
@@ -164,21 +163,18 @@ public class WarriorServer {
 
             this.socket = socket;
 
-
             System.out.println("Thread trying to create Object Input/Output Streams");
             try {
-
                 outputStream = new ObjectOutputStream(socket.getOutputStream());
                 inputStream = new ObjectInputStream(socket.getInputStream());
                 username = (String) inputStream.readObject();
-                displayEvent(username + " just connected.");
+                DisplayUtil.displayEvent(username + " just connected.");
 
             } catch (Exception e) {
-                displayEvent("Exception creating new Input/output Streams: " + e);
+                DisplayUtil.displayEvent("Exception creating new Input/output Streams: " + e);
                 return;
             }
-
-            dateInString = new Date().toString() + "\n";
+            dateInString = new Date().toString();
         }
 
 
@@ -190,7 +186,7 @@ public class WarriorServer {
                 try {
                     chatMessage = (ChatMessage) inputStream.readObject();
                 } catch (Exception e) {
-                    displayEvent(username + " Exception reading Streams: " + e);
+                    DisplayUtil.displayEvent(username + " Exception reading Streams: " + e);
                     break;
                 }
 
@@ -200,24 +196,45 @@ public class WarriorServer {
                         broadcastMessageToAllClients(username + ": " + chatMessage.getMessage());
                         break;
                     case LOGOUT:
-                        displayEvent(username + " disconnected with a LOGOUT message.");
+                        DisplayUtil.displayEvent(username + " disconnected with a LOGOUT message.");
                         keepGoing = false;
                         break;
+                    case LOAD_WARRIOR:
+                        warrior = chatMessage.getWarrior();
+                        broadcastMessageToAllClients(username + " loaded: " + warrior.getName());
+                        break;
                     case WHOISIN:
-                        writeMsg("List of the users connected at " + displayTime.format(new Date()) + "\n");
+                        String warriorName = chatMessage.getMessage();
 
-                        for (int i = 0; i < clientThreads.size(); ++i) {
+                        writeMsg("\n========= List of the users connected at " + displayTime.format(new Date()) + " =========\n" );
+
+                        for (int i = 0; i < clientThreads.size(); i++) {
                             ClientThread ct = clientThreads.get(i);
-                            writeMsg((i + 1) + ") " + ct.username + " since " + ct.dateInString);
+
+
+                            if (ct.warrior != null) {
+
+                                writeMsg((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString + " has Warrior: " + ct.warrior.getName() + "\n");
+
+                                if (StringUtils.equals(ct.warrior.getName(), warriorName)) {
+                                    writeMsg(ct.warrior.toString());
+                                }
+                            } else {
+                                writeMsg((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString);
+                            }
+
                         }
                         break;
                 }
             }
 
+
             // remove myself from the arrayList containing the list of the
             // connected Clients
             removeClientFromTheList(threadId);
+
             closeAllResource();
+
         }
 
 
@@ -227,7 +244,7 @@ public class WarriorServer {
                 if (inputStream != null) inputStream.close();
                 if (socket != null) socket.close();
             } catch (Exception e) {
-                displayEvent(username + " Error closing resources: " + e);
+                DisplayUtil.displayEvent(username + " Error closing resources: " + e);
             }
         }
 
@@ -244,8 +261,8 @@ public class WarriorServer {
 
             } catch (IOException e) {
                 // if an error occurs, do not abort just inform the user
-                displayEvent("Error sending message to " + username);
-                displayEvent(e.toString());
+                DisplayUtil.displayEvent("Error sending message to " + username);
+                DisplayUtil.displayEvent(e.toString());
             }
             return true;
         }

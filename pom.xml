@@ -12,7 +12,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
+        <java.version>1.7</java.version>
     </properties>
 
     <dependencies>
@@ -36,6 +36,26 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.4.3</version>
+        </dependency>
+        <dependency>
+        	<groupId>com.fasterxml.jackson.dataformat</groupId>
+        	<artifactId>jackson-dataformat-xml</artifactId>
+        	<version>2.4.3</version>
+        </dependency>
+        <dependency>
+          <groupId>org.codehaus.woodstox</groupId>
+          <artifactId>woodstox-core-asl</artifactId>
+          <version>4.1.4</version>
+        </dependency>
+        <dependency>
+        	<groupId>commons-io</groupId>
+        	<artifactId>commons-io</artifactId>
+        	<version>2.4</version>
         </dependency>
     </dependencies>
 
@@ -110,6 +130,24 @@
                             <goal>one-jar</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>xml-reader</id>
+                        <configuration>
+                            <mainClass>com.ahujalimtamayo.project.client.XMLReader</mainClass>
+                            <attachToBuild>true</attachToBuild>
+                            <filename>xmlreader.jar</filename>
+                            <!-- Optional -->
+                            <onejarVersion>0.97</onejarVersion>
+
+                            <!-- Optional, default is false -->
+                            <attachToBuild>true</attachToBuild>
+                            <!-- Optional, default is "onejar" -->
+                            <classifier>onejar</classifier>
+                        </configuration>
+                        <goals>
+                            <goal>one-jar</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -125,8 +163,8 @@
                         <configuration>
                             <tasks>
                                 <copy
-                                        file="${project.basedir}/src/main/resources/hercules.wdat"
-                                        tofile="${project.build.directory}/hercules.wdat"
+                                        file="${project.basedir}/src/main/resources/Hercules.wdat"
+                                        tofile="${project.build.directory}/Hercules.wdat"
                                         overwrite="true" verbose="true">
                                     <filterchain>
                                         <expandproperties/>

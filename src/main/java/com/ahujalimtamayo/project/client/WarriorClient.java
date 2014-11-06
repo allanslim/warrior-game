@@ -1,9 +1,8 @@
 package com.ahujalimtamayo.project.client;
 
-import com.ahujalimtamayo.project.common.ChatMessage;
-import com.ahujalimtamayo.project.common.IOStreamCreationException;
-import com.ahujalimtamayo.project.common.MessageSendingException;
-import com.ahujalimtamayo.project.common.ServerConnectionErrorException;
+import com.ahujalimtamayo.project.common.*;
+import com.ahujalimtamayo.project.model.Warrior;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -155,27 +154,72 @@ public class WarriorClient {
 
         Scanner scan = new Scanner(System.in);
 
+        System.out.println(DisplayUtil.getHelpMessage());
         while (true) {
             System.out.print("> ");
 
-            String msg = scan.nextLine();
+            String userInputMessage = scan.nextLine();
 
-            if (msg.equalsIgnoreCase("LOGOUT")) {
+            if (userInputMessage.equalsIgnoreCase(MessageType.LOGOUT.getShortValue())) {
 
-                client.sendMessage(new ChatMessage(ChatMessage.MessageType.LOGOUT, ""));
+                client.sendMessage(new ChatMessage(MessageType.LOGOUT, ""));
                 break;
 
-            } else if (msg.equalsIgnoreCase("WHOISIN")) {
+            } else if(userInputMessage.contains(MessageType.LOAD_WARRIOR.getShortValue())) {
 
-                client.sendMessage(new ChatMessage(ChatMessage.MessageType.WHOISIN, ""));
+                loadWarrior(client, userInputMessage);
+
+            } else if(userInputMessage.contains(MessageType.HELP.getShortValue())) {
+
+                System.out.println(DisplayUtil.getHelpMessage());
+            }
+            else if (userInputMessage.contains(MessageType.WHOISIN.getShortValue())) {
+
+                processWhoIsInCommand(client, userInputMessage);
 
             } else {
-
-                client.sendMessage(new ChatMessage(ChatMessage.MessageType.MESSAGE, msg));
+                client.sendMessage(new ChatMessage(MessageType.MESSAGE, userInputMessage));
             }
         }
 
         client.disconnect();
+    }
+
+    private static void processWhoIsInCommand(WarriorClient client, String userInputMessage) {
+        String warriorName = extractValue(userInputMessage);
+
+        client.sendMessage(new ChatMessage(MessageType.WHOISIN, warriorName));
+    }
+
+
+    private static void loadWarrior(WarriorClient client, String message) {
+        String path = extractValue(message);
+
+        if(StringUtils.isNotBlank(path)) {
+            try {
+                Warrior warrior = XmlUtil.readWarriorFromFile(path);
+
+                DisplayUtil.displayEvent(String.format("warrior [%s] loaded.", warrior));
+
+                client.sendMessage(new ChatMessage(MessageType.LOAD_WARRIOR, "", warrior));
+            } catch (IOException e) {
+                DisplayUtil.displayEvent("error loading warrior. please check file.");
+            }
+        }else {
+            DisplayUtil.displayEvent("You need to specify the fully qualified path of the warrior.");
+        }
+
+    }
+
+    private static String extractValue(String message) {
+        String[] messageValue = message.split(" ");
+
+        if (messageValue.length > 1) {
+            System.out.println(messageValue[1]);
+            return messageValue[1];
+        } else {
+            return "";
+        }
     }
 
 

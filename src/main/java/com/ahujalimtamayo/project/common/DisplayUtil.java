@@ -51,4 +51,16 @@ public class DisplayUtil {
     public static void displayWarriorNotFound() {
         System.out.println("Oops! You don't have a  warrior. Please load your warrior first using \\lw command.\n");
     }
+
+    public static void displayHelp() {
+        System.out.println(getHelpMessage());
+    }
+
+    public static void displayBroadcastMessage(ChatMessage chatMessage) {
+        String time = DATE_FORMAT.format(new Date());
+
+        String timedMessage = time + " " + chatMessage.getMessage() + "\n";
+
+        System.out.print(timedMessage);
+    }
 }

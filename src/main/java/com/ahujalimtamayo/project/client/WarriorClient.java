@@ -29,7 +29,51 @@ public class WarriorClient {
         this.username = connectionInformation.getUserName();
     }
 
-    public boolean start() {
+    /*
+     * To execute the Client in console mode use one of the following command
+     * > java -jar warrior-client.jar
+     * > java -jar warrior-client.jar  username
+     * > java -jar warrior-client.jar  username portNumber
+     * > java -jar warrior-client.jar  username portNumber serverAddress
+     *
+     * at the console prompt
+     * If the portNumber is not specified 1500 is used
+     * If the serverAddress is not specified "localHost" is used
+     * If the username is not specified "Anonymous" is used
+     *
+     */
+    public static void main(String[] args) {
+        // default values
+
+        ConnectionInformation connectionInformation = initConnectionInformation(args);
+
+        if (connectionInformation == null) {
+            return;
+        }
+
+        WarriorClient client = new WarriorClient(connectionInformation);
+
+        if (!client.execute())
+            return;
+
+        Scanner scan = new Scanner(System.in);
+
+        DisplayUtil.displayHelp();
+
+        while (true) {
+            System.out.print("> ");
+
+            String userInputMessage = scan.nextLine();
+
+            if (processInputMessage(client, userInputMessage)) break;
+        }
+
+        client.disconnect();
+    }
+
+
+
+    public boolean execute() {
         try {
             connectToServer();
 
@@ -99,48 +143,6 @@ public class WarriorClient {
             System.out.println("Error closing the socket and streams" + e);
         }
 
-    }
-
-    /*
-     * To start the Client in console mode use one of the following command
-     * > java -jar warrior-client.jar
-     * > java -jar warrior-client.jar  username
-     * > java -jar warrior-client.jar  username portNumber
-     * > java -jar warrior-client.jar  username portNumber serverAddress
-     *
-     * at the console prompt
-     * If the portNumber is not specified 1500 is used
-     * If the serverAddress is not specified "localHost" is used
-     * If the username is not specified "Anonymous" is used
-     *
-     */
-    public static void main(String[] args) {
-        // default values
-
-        ConnectionInformation connectionInformation = initConnectionInformation(args);
-
-        if (connectionInformation == null) {
-            return;
-        }
-
-        WarriorClient client = new WarriorClient(connectionInformation);
-
-        if (!client.start())
-            return;
-
-        Scanner scan = new Scanner(System.in);
-
-        System.out.println(DisplayUtil.getHelpMessage());
-
-        while (true) {
-            System.out.print("> ");
-
-            String userInputMessage = scan.nextLine();
-
-            if (processInputMessage(client, userInputMessage)) break;
-        }
-
-        client.disconnect();
     }
 
     private static boolean processInputMessage(WarriorClient client, String userInputMessage) {
@@ -295,9 +297,9 @@ public class WarriorClient {
         public void run() {
             while (true) {
                 try {
-                    String msg = (String) inputStream.readObject();
+                    ChatMessage chatMessage = (ChatMessage) inputStream.readObject();
 
-                    System.out.println(msg);
+                    System.out.println(chatMessage.getMessage());
                     System.out.print("> ");
 
                 } catch (Exception e) {

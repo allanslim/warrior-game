@@ -1,8 +1,10 @@
 package com.ahujalimtamayo.project.server;
 
 
+import com.ahujalimtamayo.project.common.AttackMessage;
 import com.ahujalimtamayo.project.common.ChatMessage;
 import com.ahujalimtamayo.project.common.DisplayUtil;
+import com.ahujalimtamayo.project.common.MessageType;
 import com.ahujalimtamayo.project.model.Warrior;
 import org.apache.commons.lang3.StringUtils;
 
@@ -54,11 +56,11 @@ public class WarriorServer {
         }
 
         WarriorServer server = new WarriorServer(portNumber);
-        server.start();
+        server.execute();
     }
 
 
-    public void start() {
+    public void execute() {
 
         try {
             // the socket used by the server
@@ -104,11 +106,9 @@ public class WarriorServer {
 
     private synchronized void broadcastMessageToAllClients(String message) {
 
-        String time = displayTime.format(new Date());
+        ChatMessage chatMessage = new ChatMessage(MessageType.MESSAGE, message);
 
-        String timedMessage = time + " " + message + "\n";
-
-        System.out.print(timedMessage);
+        DisplayUtil.displayBroadcastMessage(chatMessage);
 
 
         // we loop in reverse order in case we would have to remove a Client
@@ -116,12 +116,35 @@ public class WarriorServer {
         for (int i = clientThreads.size(); --i >= 0; ) {
             ClientThread ct = clientThreads.get(i);
             // try to write to the Client if it fails removeClientFromTheList it from the list
-            if (!ct.writeMsg(timedMessage)) {
+            if (!ct.writeMsg(chatMessage)) {
                 clientThreads.remove(i);
                 DisplayUtil.displayEvent("Disconnected Client " + ct.username + " removed from list.");
             }
         }
     }
+
+    private synchronized void sendMessageToClient(AttackMessage attackMessage) {
+
+
+        String message = attackMessage.getPlayerName() + " is attacking your warrior " + attackMessage.getWarriorName() + " with " + attackMessage.getAttack();
+
+
+        ChatMessage chatMessage = new ChatMessage(MessageType.MESSAGE, message);
+
+        for (int i = clientThreads.size(); --i >= 0; ) {
+            ClientThread clientThread = clientThreads.get(i);
+
+            if(StringUtils.equals(clientThread.username, attackMessage.getPlayerName())) {
+
+                if (!clientThread.writeMsg(chatMessage)) {
+                    clientThreads.remove(i);
+                    DisplayUtil.displayEvent("Disconnected Client " + clientThread.username + " removed from list.");
+                    break;
+                }
+            }
+        }
+    }
+
 
     // for a client who logoff using the LOGOUT message
     synchronized void removeClientFromTheList(int id) {
@@ -149,8 +172,6 @@ public class WarriorServer {
         private int threadId;
 
         private String username;
-
-        private ChatMessage chatMessage;
 
         private String dateInString;
 
@@ -184,29 +205,34 @@ public class WarriorServer {
 
             while (keepGoing) {
                 try {
-                    chatMessage = (ChatMessage) inputStream.readObject();
+                    ChatMessage chatMessage = (ChatMessage) inputStream.readObject();
+
+                    switch (chatMessage.getMessageType()) {
+
+                        case MESSAGE:
+                            broadcastMessageToAllClients(username + ": " + chatMessage.getMessage());
+                            break;
+                        case LOGOUT:
+                            DisplayUtil.displayEvent(username + " disconnected with a LOGOUT message.");
+                            keepGoing = false;
+                            break;
+                        case LOAD_WARRIOR:
+                            warrior = chatMessage.getWarrior();
+                            broadcastMessageToAllClients(username + " loaded: " + warrior.getName());
+                            break;
+                        case ATTACK:
+                            processAttack(chatMessage);
+                            break;
+                        case WHOISIN:
+                            displayWarriorInfo(chatMessage.getMessage());
+                            break;
+                    }
+
                 } catch (Exception e) {
                     DisplayUtil.displayEvent(username + " Exception reading Streams: " + e);
                     break;
                 }
 
-                switch (chatMessage.getMessageType()) {
-
-                    case MESSAGE:
-                        broadcastMessageToAllClients(username + ": " + chatMessage.getMessage());
-                        break;
-                    case LOGOUT:
-                        DisplayUtil.displayEvent(username + " disconnected with a LOGOUT message.");
-                        keepGoing = false;
-                        break;
-                    case LOAD_WARRIOR:
-                        warrior = chatMessage.getWarrior();
-                        broadcastMessageToAllClients(username + " loaded: " + warrior.getName());
-                        break;
-                    case WHOISIN:
-                        displayWarriorInfo(chatMessage.getMessage());
-                        break;
-                }
             }
 
 
@@ -218,24 +244,37 @@ public class WarriorServer {
 
         }
 
+        private void processAttack(ChatMessage chatMessage) {
+            AttackMessage attackMessage = chatMessage.getAttackMessage();
+
+            sendMessageToClient( attackMessage );
+
+        }
+
         private void displayWarriorInfo(String warriorName) {
-            writeMsg("\n========= List of the users connected at " + displayTime.format(new Date()) + " =========\n" );
+
+            writeMsg(buildChatMessage("\n========= List of the users connected at " + displayTime.format(new Date()) + " =========\n" ));
 
             for (int i = 0; i < clientThreads.size(); i++) {
                 ClientThread ct = clientThreads.get(i);
 
                 if (ct.warrior != null) {
 
-                    writeMsg((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString + " has Warrior: " + ct.warrior.getName() + "\n");
+                    writeMsg(buildChatMessage(((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString + " has Warrior: " + ct.warrior.getName() + "\n")));
 
                     if (StringUtils.equals(ct.warrior.getName(), warriorName)) {
-                        writeMsg(ct.warrior.toString());
+                        writeMsg(buildChatMessage(ct.warrior.toString()));
                     }
                 } else {
-                    writeMsg((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString);
+                    writeMsg(buildChatMessage((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString));
                 }
 
             }
+        }
+
+
+        private ChatMessage buildChatMessage(String message) {
+            return new ChatMessage(MessageType.MESSAGE, message) ;
         }
 
 
@@ -249,7 +288,7 @@ public class WarriorServer {
             }
         }
 
-        private boolean writeMsg(String msg) {
+        private boolean writeMsg(ChatMessage chatMessage) {
 
             if (!socket.isConnected()) {
                 closeAllResource();
@@ -258,7 +297,7 @@ public class WarriorServer {
 
             try {
 
-                outputStream.writeObject(msg);
+                outputStream.writeObject(chatMessage);
 
             } catch (IOException e) {
                 // if an error occurs, do not abort just inform the user

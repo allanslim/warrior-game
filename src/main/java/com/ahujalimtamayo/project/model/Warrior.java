@@ -1,6 +1,7 @@
 package com.ahujalimtamayo.project.model;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.List;
@@ -84,6 +85,25 @@ public class Warrior implements Serializable {
 
     public void  addHealthPoints(int point) { healthLevel.addHealthBy(point); }
 
+    public boolean isAttackAvailable(String attackName) {
+        for( Attack attack : attacks) {
+            if(StringUtils.equals(attack.getName(), attackName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isDefenseAvailable(String defenseName) {
+        for( Defense attack : defenses) {
+            if(StringUtils.equals(attack.getName(), defenseName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -120,6 +140,8 @@ public class Warrior implements Serializable {
         warriorBuilder.append("Description: ").append(description).append("\n");
         warriorBuilder.append("Health Level: ").append(healthLevel.getCurrentHealth()).append("\n");
         warriorBuilder.append("Place Of Origin: ").append(placeOfOrigin).append("\n");
+        warriorBuilder.append("Attacks:\n").append(attacks).append("\n");
+        warriorBuilder.append("Defenses:\n").append(defenses).append("\n");
         warriorBuilder.append(DISPLAY_SEPARATOR);
         return warriorBuilder.toString();
     }

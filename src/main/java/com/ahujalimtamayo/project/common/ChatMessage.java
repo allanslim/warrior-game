@@ -11,11 +11,17 @@ public class ChatMessage implements Serializable {
     private MessageType messageType;
     private String message;
     private Warrior warrior;
+    AttackMessage attackMessage;
 
 
     public ChatMessage(MessageType messageType, String message) {
         this.messageType = messageType;
         this.message = message;
+    }
+
+    public ChatMessage(MessageType messageType, AttackMessage attackMessage) {
+        this.messageType = messageType;
+        this.attackMessage = attackMessage;
     }
 
     public ChatMessage(MessageType messageType, String message, Warrior warrior) {
@@ -29,5 +35,9 @@ public class ChatMessage implements Serializable {
     public String getMessage() { return message; }
 
     public Warrior getWarrior() { return warrior; }
+
+    public AttackMessage getAttackMessage() {
+        return attackMessage;
+    }
 }
 

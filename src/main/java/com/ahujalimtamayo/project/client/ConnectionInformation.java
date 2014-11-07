@@ -1,7 +1,10 @@
 package com.ahujalimtamayo.project.client;
 
+import java.util.Random;
+
 public class ConnectionInformation {
 
+    private static final Random RANDOM = new Random();
     private int portNumber;
     private String serverAddress;
     private String userName;
@@ -9,7 +12,7 @@ public class ConnectionInformation {
     public ConnectionInformation() {
         portNumber = 1500;
         serverAddress = "localhost";
-        userName = "Anonymous";
+        userName = "Player" + RANDOM.nextInt(1000);
     }
 
     public int getPortNumber() {

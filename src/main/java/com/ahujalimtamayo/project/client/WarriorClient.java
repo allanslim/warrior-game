@@ -119,7 +119,7 @@ public class WarriorClient {
 
         ConnectionInformation connectionInformation = initConnectionInformation(args);
 
-        if(connectionInformation == null) {
+        if (connectionInformation == null) {
             return;
         }
 
@@ -161,47 +161,89 @@ public class WarriorClient {
 
             processWhoIsInCommand(client, userInputMessage);
 
+        } else if (userInputMessage.contains(MessageType.ATTACK.getShortValue())) {
+
+            processAttackCommand(client, userInputMessage);
+
         } else {
             client.sendMessage(new ChatMessage(MessageType.MESSAGE, userInputMessage));
         }
         return false;
     }
 
+
     private static ConnectionInformation initConnectionInformation(String[] args) {
 
         ConnectionInformation connectionInformation = new ConnectionInformation();
         switch (args.length) {
-             // > javac Client username portNumber serverAddr
-             case 3:
-                 connectionInformation.setServerAddress(args[2]);
-                 // > javac Client username portNumber
-             case 2:
-                 try {
-                     connectionInformation.setPortNumber(Integer.parseInt(args[1]));
-                 } catch (Exception e) {
-                     System.out.println("Invalid port number.");
-                     System.out.println("Usage is: > java Client [username] [portNumber] [serverAddress]");
-                     return null;
-                 }
-                 // > javac Client username
-             case 1:
-                 connectionInformation.setUserName(args[0]);
-                 // > java Client
-             case 0:
-                 break;
-             // invalid number of arguments
-             default:
-                 System.out.println("Usage is: > java Client [username] [portNumber] {serverAddress]");
-                 return null;
-         }
+            // > javac Client username portNumber serverAddr
+            case 3:
+                connectionInformation.setServerAddress(args[2]);
+                // > javac Client username portNumber
+            case 2:
+                try {
+                    connectionInformation.setPortNumber(Integer.parseInt(args[1]));
+                } catch (Exception e) {
+                    DisplayUtil.displayInvalidPortNumberMessage();
+                    return null;
+                }
+                // > javac Client username
+            case 1:
+                connectionInformation.setUserName(args[0]);
+                // > java Client
+            case 0:
+                break;
+            // invalid number of arguments
+            default:
+                DisplayUtil.displayInvalidArgument();
+                return null;
+        }
 
         return connectionInformation;
     }
+
 
     private static void processWhoIsInCommand(WarriorClient client, String userInputMessage) {
         String warriorName = extractValue(userInputMessage);
 
         client.sendMessage(new ChatMessage(MessageType.WHOISIN, warriorName));
+    }
+
+
+    private static void processAttackCommand(WarriorClient client, String userInputMessage) {
+
+        if (warrior == null) {
+            DisplayUtil.displayWarriorNotFound();
+            return;
+        }
+
+        AttackMessage attackMessage = extractAttackMessage(userInputMessage);
+
+        if (attackMessage != null) {
+
+            if (isAttackMessageValid(client, attackMessage)) {
+                client.sendMessage(new ChatMessage(MessageType.ATTACK, attackMessage));
+            }
+
+        } else {
+            DisplayUtil.displayInvalidUseOfAttackCommand();
+        }
+    }
+
+
+    private static boolean isAttackMessageValid(WarriorClient client, AttackMessage attackMessage) {
+        if (StringUtils.equals(attackMessage.getPlayerName(), client.username)) {
+
+            DisplayUtil.displayCannotAttackSelfError();
+            return false;
+
+        } else if (!warrior.isAttackAvailable(attackMessage.getAttack())) {
+
+            DisplayUtil.displayAttackNotAvailable();
+            return false;
+
+        }
+        return true;
     }
 
 
@@ -221,6 +263,18 @@ public class WarriorClient {
         } else {
             DisplayUtil.displayEvent("You need to specify the fully qualified path of the warrior.");
         }
+
+    }
+
+    private static AttackMessage extractAttackMessage(String message) {
+        String[] messageValue = message.split(" ");
+
+        if (messageValue.length > 3) {
+            return new AttackMessage(messageValue[1], messageValue[2], messageValue[3]);
+        } else {
+            return null;
+        }
+
 
     }
 

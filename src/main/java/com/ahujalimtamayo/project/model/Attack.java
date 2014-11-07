@@ -30,4 +30,11 @@ public class Attack implements Action {
     public void setName(String name) {
         this.name = name;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder attackBuilder = new StringBuilder();
+        attackBuilder.append("Name:").append(name).append(", damage points:").append(actionPoints).append("\n");
+        return attackBuilder.toString();
+    }
 }

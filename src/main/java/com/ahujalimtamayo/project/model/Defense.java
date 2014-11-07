@@ -29,4 +29,11 @@ public  class Defense implements Action {
     public void setName(String name) {
         this.name = name;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder attackBuilder = new StringBuilder();
+        attackBuilder.append("name:").append(name).append(", defense points: ").append(actionPoints).append("\n");
+        return attackBuilder.toString();
+    }
 }

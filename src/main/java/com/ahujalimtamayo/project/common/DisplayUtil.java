@@ -1,5 +1,7 @@
 package com.ahujalimtamayo.project.common;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -72,5 +74,10 @@ public class DisplayUtil {
         String timedMessage = time + " " + chatMessage.getMessage() + "\n";
 
         System.out.print(timedMessage);
+    }
+
+    public static void displayPrompt(String promptName) {
+
+        System.out.print(StringUtils.stripToEmpty(promptName) + "> ");
     }
 }

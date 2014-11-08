@@ -45,15 +45,15 @@ public class WarriorClient {
     public static void main(String[] args) {
         // default values
 
-        ConnectionInformation connectionInformation = initConnectionInformation(args);
+        ConnectionInformation connectionInformation = createConnectionInformation(args);
 
         if (connectionInformation == null) {
             return;
         }
 
-        WarriorClient client = new WarriorClient(connectionInformation);
+        WarriorClient warriorClient = new WarriorClient(connectionInformation);
 
-        if (!client.execute())
+        if (!warriorClient.execute())
             return;
 
         Scanner scan = new Scanner(System.in);
@@ -61,14 +61,14 @@ public class WarriorClient {
         DisplayUtil.displayHelp();
 
         while (true) {
-            System.out.print("> ");
+            DisplayUtil.displayPrompt(warriorClient.getUsername());
 
             String userInputMessage = scan.nextLine();
 
-            if (processInputMessage(client, userInputMessage)) break;
+            if (processInputMessage(warriorClient, userInputMessage)) break;
         }
 
-        client.disconnect();
+        warriorClient.disconnect();
         System.exit(0);
     }
 
@@ -80,7 +80,8 @@ public class WarriorClient {
 
             createInputOutStreams();
 
-            new ListenFromServer().start();
+            ListenFromServer serverListener =  new ListenFromServer(this.getUsername());
+            serverListener.start();
 
             sendUsernameToServer();
 
@@ -180,7 +181,7 @@ public class WarriorClient {
 
 
 
-    private static ConnectionInformation initConnectionInformation(String[] args) {
+    private static ConnectionInformation createConnectionInformation(String[] args) {
 
         ConnectionInformation connectionInformation = new ConnectionInformation();
         switch (args.length) {
@@ -310,8 +311,18 @@ public class WarriorClient {
         }
     }
 
+    public String getUsername() {
+        return username;
+    }
+
 
     class ListenFromServer extends Thread {
+
+        private String promptName;
+
+        public ListenFromServer(String username) {
+            this.promptName = username;
+        }
 
         public void run() {
             while (true) {
@@ -319,7 +330,7 @@ public class WarriorClient {
                     ChatMessage chatMessage = (ChatMessage) inputStream.readObject();
 
                     System.out.println(chatMessage.getMessage());
-                    System.out.print("> ");
+                    DisplayUtil.displayPrompt(this.promptName);
 
                 } catch (Exception e) {
                     System.out.println("Server has close the connection: " + e);

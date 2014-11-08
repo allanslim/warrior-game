@@ -13,7 +13,7 @@ public class HealthLevel implements Serializable {
     }
 
     public void reduceHealthBy(int point) {
-        validatePointValueNotMoreThanMaximum(point);
+        validatePoint(point);
 
         if(currentHealth < point) {
             currentHealth = 0;
@@ -22,7 +22,11 @@ public class HealthLevel implements Serializable {
         currentHealth = currentHealth - point;
     }
 
-    private void validatePointValueNotMoreThanMaximum(int point) {
+    private void validatePoint(int point) {
+        if(point <= 0) {
+            throw new IllegalArgumentException("points cannot be a negative value.");
+        }
+
         if(point >= MAXIMUM_HEALTH) {
             throw new IllegalArgumentException("reduce point cannot be greater than or equal to MAXIMUM HEALTH");
         }
@@ -31,7 +35,7 @@ public class HealthLevel implements Serializable {
     public int getCurrentHealth() { return currentHealth; }
 
     public void addHealthBy(int point) {
-        validatePointValueNotMoreThanMaximum(point);
+        validatePoint(point);
 
         currentHealth = currentHealth + point;
 

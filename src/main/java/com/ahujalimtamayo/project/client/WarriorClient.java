@@ -69,6 +69,7 @@ public class WarriorClient {
         }
 
         client.disconnect();
+        System.exit(0);
     }
 
 
@@ -165,13 +166,18 @@ public class WarriorClient {
 
         } else if (userInputMessage.contains(MessageType.ATTACK.getShortValue())) {
 
-            processAttackCommand(client, userInputMessage);
+            processActionCommand(client, userInputMessage, MessageType.ATTACK);
 
-        } else {
+        } else if(userInputMessage.contains(MessageType.DEFENSE.getShortValue())) {
+
+            processActionCommand(client, userInputMessage, MessageType.DEFENSE);
+        }
+        else {
             client.sendMessage(new ChatMessage(MessageType.MESSAGE, userInputMessage));
         }
         return false;
     }
+
 
 
     private static ConnectionInformation initConnectionInformation(String[] args) {
@@ -212,40 +218,52 @@ public class WarriorClient {
     }
 
 
-    private static void processAttackCommand(WarriorClient client, String userInputMessage) {
+    private static void processActionCommand(WarriorClient client, String userInputMessage, MessageType messageType) {
 
         if (warrior == null) {
-            DisplayUtil.displayWarriorNotFound();
-            return;
-        }
+              DisplayUtil.displayWarriorNotFound();
+              return;
+          }
 
-        AttackMessage attackMessage = extractAttackMessage(userInputMessage);
+          ActionMessage actionMessage = extractActionMessage(userInputMessage);
 
-        if (attackMessage != null) {
+          if (actionMessage != null) {
 
-            if (isAttackMessageValid(client, attackMessage)) {
-                client.sendMessage(new ChatMessage(MessageType.ATTACK, attackMessage));
-            }
+              if (isAttackMessageValid(client, actionMessage, messageType)) {
+                  client.sendMessage(new ChatMessage(messageType, actionMessage));
+              }
 
-        } else {
-            DisplayUtil.displayInvalidUseOfAttackCommand();
-        }
+          } else {
+              DisplayUtil.displayInvalidUseOfAttackCommand();
+          }
     }
 
 
-    private static boolean isAttackMessageValid(WarriorClient client, AttackMessage attackMessage) {
-        if (StringUtils.equals(attackMessage.getPlayerName(), client.username)) {
 
-            DisplayUtil.displayCannotAttackSelfError();
+    private static boolean isAttackMessageValid(WarriorClient client, ActionMessage actionMessage,  MessageType messageType) {
+
+        boolean isActionAvailable = isActionAvailable(actionMessage, messageType);
+
+
+        if (StringUtils.equals(actionMessage.getPlayerName(), client.username)) {
+
+            DisplayUtil.displayCannotDoActionError(messageType);
+
             return false;
 
-        } else if (!warrior.isAttackAvailable(attackMessage.getAttack())) {
+        }
 
-            DisplayUtil.displayAttackNotAvailable();
+        if (!isActionAvailable) {
+
+            DisplayUtil.displayAttackNotAvailable(messageType);
             return false;
 
         }
         return true;
+    }
+
+    private static boolean isActionAvailable(ActionMessage actionMessage, MessageType messageType) {
+        return messageType == MessageType.ATTACK ? warrior.isAttackAvailable(actionMessage.getActionName()) : warrior.isDefenseAvailable(actionMessage.getActionName());
     }
 
 
@@ -268,11 +286,12 @@ public class WarriorClient {
 
     }
 
-    private static AttackMessage extractAttackMessage(String message) {
-        String[] messageValue = message.split(" ");
+    private static ActionMessage extractActionMessage(String message) {
+        String[] messageValue = StringUtils.strip(message).split(" ");
 
         if (messageValue.length > 3) {
-            return new AttackMessage(messageValue[1], messageValue[2], messageValue[3]);
+            int attackPoint = warrior.findAttackPoint(messageValue[3]);
+            return new ActionMessage(messageValue[1], messageValue[2], messageValue[3], attackPoint);
         } else {
             return null;
         }
@@ -281,7 +300,7 @@ public class WarriorClient {
     }
 
     private static String extractValue(String message) {
-        String[] messageValue = message.split(" ");
+        String[] messageValue = StringUtils.strip(message).split(" ");
 
         if (messageValue.length > 1) {
             System.out.println(messageValue[1]);

@@ -103,6 +103,24 @@ public class Warrior implements Serializable {
         return false;
     }
 
+    public int findAttackPoint(String attackName) {
+        for( Attack attack : attacks) {
+            if(StringUtils.equals(attack.getName(), attackName)) {
+                return attack.getActionPoints();
+            }
+        }
+        return 0;
+    }
+
+    private int findDefensePoint(String defenseName) {
+        for( Attack attack : attacks) {
+            if(StringUtils.equals(attack.getName(), defenseName)) {
+                return attack.getActionPoints();
+            }
+        }
+        return 0;
+    }
+
 
     @Override
     public boolean equals(Object o) {

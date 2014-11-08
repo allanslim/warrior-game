@@ -8,17 +8,17 @@
   <attacks>
     <attacks>
       <name>kick</name>
-      <actionPoints>-1</actionPoints>
+      <actionPoints>1</actionPoints>
       <type>ATTACK</type>
     </attacks>
     <attacks>
       <name>punch</name>
-      <actionPoints>-1</actionPoints>
+      <actionPoints>1</actionPoints>
       <type>ATTACK</type>
     </attacks>
     <attacks>
       <name>ionic blast</name>
-      <actionPoints>-3</actionPoints>
+      <actionPoints>\3</actionPoints>
       <type>ATTACK</type>
     </attacks>
   </attacks>

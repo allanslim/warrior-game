@@ -1,7 +1,7 @@
 package com.ahujalimtamayo.project.server;
 
 
-import com.ahujalimtamayo.project.common.AttackMessage;
+import com.ahujalimtamayo.project.common.ActionMessage;
 import com.ahujalimtamayo.project.common.ChatMessage;
 import com.ahujalimtamayo.project.common.DisplayUtil;
 import com.ahujalimtamayo.project.common.MessageType;
@@ -115,7 +115,7 @@ public class WarriorServer {
         // because it has disconnected
         for (int i = clientThreads.size(); --i >= 0; ) {
             ClientThread ct = clientThreads.get(i);
-            // try to write to the Client if it fails removeClientFromTheList it from the list
+            // try to write to the Client if it fails removeClientThreadFromListById it from the list
             if (!ct.writeMsg(chatMessage)) {
                 clientThreads.remove(i);
                 DisplayUtil.displayEvent("Disconnected Client " + ct.username + " removed from list.");
@@ -123,31 +123,54 @@ public class WarriorServer {
         }
     }
 
-    private synchronized void sendMessageToClient(AttackMessage attackMessage) {
+    private synchronized void sendMessageToClient(ClientThread targetClientThread, ActionMessage actionMessage) {
 
 
-        String message = attackMessage.getPlayerName() + " is attacking your warrior " + attackMessage.getWarriorName() + " with " + attackMessage.getAttack();
+        String message = actionMessage.getPlayerName() + " is attacking your warrior " + actionMessage.getWarriorName() + " with " + actionMessage.getActionName();
 
 
         ChatMessage chatMessage = new ChatMessage(MessageType.MESSAGE, message);
 
+
+        if(targetClientThread != null && !targetClientThread.writeMsg(chatMessage)) {
+
+            removeClientThreadFromListByIdByPlayerName(actionMessage.getPlayerName());
+
+            DisplayUtil.displayEvent("Disconnected Client " + targetClientThread.username + " removed from list.");
+        }
+
+
+    }
+
+
+    private ClientThread findClient(ActionMessage actionMessage) {
+
         for (int i = clientThreads.size(); --i >= 0; ) {
             ClientThread clientThread = clientThreads.get(i);
 
-            if(StringUtils.equals(clientThread.username, attackMessage.getPlayerName())) {
+            if(StringUtils.equals(clientThread.username, actionMessage.getPlayerName())) {
 
-                if (!clientThread.writeMsg(chatMessage)) {
-                    clientThreads.remove(i);
-                    DisplayUtil.displayEvent("Disconnected Client " + clientThread.username + " removed from list.");
-                    break;
-                }
+                return clientThread;
+            }
+        }
+        return null;
+    }
+
+    private void removeClientThreadFromListByIdByPlayerName(String playerName) {
+
+        for (int i = clientThreads.size(); --i >= 0; ) {
+            ClientThread clientThread = clientThreads.get(i);
+
+            if(StringUtils.equals(clientThread.username, playerName)) {
+                clientThreads.remove(i);
             }
         }
     }
 
 
+
     // for a client who logoff using the LOGOUT message
-    synchronized void removeClientFromTheList(int id) {
+    synchronized void removeClientThreadFromListById(int id) {
 
         for (int i = 0; i < clientThreads.size(); ++i) {
 
@@ -221,8 +244,10 @@ public class WarriorServer {
                             broadcastMessageToAllClients(username + " loaded: " + warrior.getName());
                             break;
                         case ATTACK:
-                            processAttack(chatMessage);
+                            processAction(chatMessage, MessageType.ATTACK);
                             break;
+                        case DEFENSE:
+                            processAction(chatMessage, MessageType.DEFENSE);
                         case WHOISIN:
                             displayWarriorInfo(chatMessage.getMessage());
                             break;
@@ -238,18 +263,32 @@ public class WarriorServer {
 
             // remove myself from the arrayList containing the list of the
             // connected Clients
-            removeClientFromTheList(threadId);
+            removeClientThreadFromListById(threadId);
 
             closeAllResource();
 
         }
 
-        private void processAttack(ChatMessage chatMessage) {
-            AttackMessage attackMessage = chatMessage.getAttackMessage();
 
-            sendMessageToClient( attackMessage );
+        private void processAction(ChatMessage chatMessage,  MessageType messageType) {
 
+            ActionMessage actionMessage = chatMessage.getActionMessage();
+
+            ClientThread targetClientThread = findClient(actionMessage);
+
+            if(targetClientThread != null ) {
+
+                if(messageType == MessageType.MESSAGE.ATTACK) {
+                    targetClientThread.warrior.reduceHealthPoints(actionMessage.getActionPoint());
+                }else if(messageType == MessageType.DEFENSE) {
+                    targetClientThread.warrior.addHealthPoints(actionMessage.getActionPoint());
+                }
+
+            }
+
+            sendMessageToClient(targetClientThread, actionMessage);
         }
+
 
         private void displayWarriorInfo(String warriorName) {
 

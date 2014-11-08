@@ -40,12 +40,22 @@ public class DisplayUtil {
         System.out.println(ATTACK_COMMAND_HELP);
     }
 
-    public static void displayCannotAttackSelfError() {
-        System.out.println("Oops! You cannot attack yourself.\n");
+    public static void displayCannotDoActionError(MessageType messageType) {
+
+        String action = getActionCommand(messageType);
+
+        System.out.println("Oops! You cannot " + action + " yourself.\n");
     }
 
-    public static void displayAttackNotAvailable() {
-        System.out.println("Oops! Your warrior does not have this attack.\n");
+    private static String getActionCommand(MessageType messageType) {
+        return messageType == MessageType.ATTACK? "attack" : "defense";
+    }
+
+    public static void displayAttackNotAvailable(MessageType messageType) {
+
+        String action = getActionCommand(messageType);
+
+        System.out.println("Oops! Your warrior does not have this " + action +".\n");
     }
 
     public static void displayWarriorNotFound() {

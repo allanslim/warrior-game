@@ -6,7 +6,8 @@ public enum MessageType {
     LOGOUT("\\logout"),
     LOAD_WARRIOR("\\lw"),
     HELP("\\help"),
-    ATTACK("\\attack");
+    ATTACK("\\attack"),
+    DEFENSE("\\defense");
 
     private String shortValue;
 

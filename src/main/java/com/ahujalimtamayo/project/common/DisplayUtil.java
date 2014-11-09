@@ -16,7 +16,7 @@ public class DisplayUtil {
         System.out.println(time + " " + message);
     }
 
-    public static String getHelpMessage() {
+    private static String getHelpMessage() {
         String separator = "\n--------------------------------------------\n";
         StringBuilder helpMessageBuilder  = new StringBuilder(separator);
         helpMessageBuilder.append("\\logout - to logout of the system.\n");

@@ -8,20 +8,16 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.Scanner;
-
 
 public class WarriorClient {
-
 
     private ObjectInputStream inputStream;
     private ObjectOutputStream outputStream;
     private Socket socket;
-    private String server, username;
+    private String server;
+    private String username;
     private int port;
-
-    private static Warrior warrior;
-
+    private Warrior warrior;
 
     public WarriorClient(ConnectionInformation connectionInformation) {
         this.server = connectionInformation.getServerAddress();
@@ -29,61 +25,18 @@ public class WarriorClient {
         this.username = connectionInformation.getUserName();
     }
 
-    /*
-     * To execute the Client in console mode use one of the following command
-     * > java -jar warrior-client.jar
-     * > java -jar warrior-client.jar  username
-     * > java -jar warrior-client.jar  username portNumber
-     * > java -jar warrior-client.jar  username portNumber serverAddress
-     *
-     * at the console prompt
-     * If the portNumber is not specified 1500 is used
-     * If the serverAddress is not specified "localHost" is used
-     * If the username is not specified "Anonymous" is used
-     *
-     */
-    public static void main(String[] args) {
-        // default values
+    public boolean initialize() {
 
-        ConnectionInformation connectionInformation = createConnectionInformation(args);
-
-        if (connectionInformation == null) {
-            return;
-        }
-
-        WarriorClient warriorClient = new WarriorClient(connectionInformation);
-
-        if (!warriorClient.execute())
-            return;
-
-        Scanner scan = new Scanner(System.in);
-
-        DisplayUtil.displayHelp();
-
-        while (true) {
-            DisplayUtil.displayPrompt(warriorClient.getUsername());
-
-            String userInputMessage = scan.nextLine();
-
-            if (processInputMessage(warriorClient, userInputMessage)) break;
-        }
-
-        warriorClient.disconnect();
-        System.exit(0);
-    }
-
-
-
-    public boolean execute() {
+        ServerListenerThread serverListener = null;
         try {
-            connectToServer();
+            initializeSocket();
 
-            createInputOutStreams();
+            initializeInputOutputObjectStreams();
 
-            ListenFromServer serverListener =  new ListenFromServer(this.getUsername());
+            serverListener = new ServerListenerThread(username, inputStream, outputStream);
+
             serverListener.start();
 
-            sendUsernameToServer();
 
         } catch (ServerConnectionErrorException e) {
             System.out.println("Error connecting to server:" + e);
@@ -93,6 +46,7 @@ public class WarriorClient {
             return false;
         } catch (MessageSendingException e) {
             System.out.println("error thrown when user sends login name : " + e);
+            serverListener.setRunning(false);
             disconnect();
             return false;
         }
@@ -100,24 +54,15 @@ public class WarriorClient {
         return true;
     }
 
-    private void sendUsernameToServer() throws MessageSendingException {
+    public void sendMessage(ChatMessage msg) {
         try {
-            outputStream.writeObject(username);
-        } catch (IOException eIO) {
-            throw new MessageSendingException();
-        }
-    }
-
-    private void createInputOutStreams() throws IOStreamCreationException {
-        try {
-            inputStream = new ObjectInputStream(socket.getInputStream());
-            outputStream = new ObjectOutputStream(socket.getOutputStream());
+            outputStream.writeObject(msg);
         } catch (IOException e) {
-            throw new IOStreamCreationException();
+            System.out.println("Exception writing to server: " + e);
         }
     }
 
-    private void connectToServer() throws ServerConnectionErrorException {
+    private void initializeSocket() throws ServerConnectionErrorException {
         try {
             socket = new Socket(server, port);
             String msg = "Connection accepted " + socket.getInetAddress() + ":" + socket.getPort();
@@ -127,16 +72,16 @@ public class WarriorClient {
         }
     }
 
-
-    void sendMessage(ChatMessage msg) {
+    private void initializeInputOutputObjectStreams() throws IOStreamCreationException {
         try {
-            outputStream.writeObject(msg);
+            inputStream = new ObjectInputStream(socket.getInputStream());
+            outputStream = new ObjectOutputStream(socket.getOutputStream());
         } catch (IOException e) {
-            System.out.println("Exception writing to server: " + e);
+            throw new IOStreamCreationException();
         }
     }
 
-    private void disconnect() {
+    public void disconnect() {
         try {
             if (inputStream != null) inputStream.close();
             if (outputStream != null) outputStream.close();
@@ -147,111 +92,134 @@ public class WarriorClient {
 
     }
 
-    private static boolean processInputMessage(WarriorClient client, String userInputMessage) {
+    public String getUsername() {
+        return username;
+    }
+
+    public Warrior getWarrior() {
+        return warrior;
+    }
+
+    public void setWarrior(Warrior warrior) {
+        this.warrior = warrior;
+    }
+
+
+    public boolean processInputMessage(String userInputMessage) {
         if (userInputMessage.equalsIgnoreCase(MessageType.LOGOUT.getShortValue())) {
 
-            client.sendMessage(new ChatMessage(MessageType.LOGOUT, ""));
+            sendMessage(new ChatMessage(MessageType.LOGOUT, ""));
             return true;
 
         } else if (userInputMessage.contains(MessageType.LOAD_WARRIOR.getShortValue())) {
 
-            loadWarrior(client, userInputMessage);
+            loadWarrior(userInputMessage);
 
         } else if (userInputMessage.contains(MessageType.HELP.getShortValue())) {
 
-            System.out.println(DisplayUtil.getHelpMessage());
+            DisplayUtil.displayHelp();
 
         } else if (userInputMessage.contains(MessageType.WHOISIN.getShortValue())) {
 
-            processWhoIsInCommand(client, userInputMessage);
+            processWhoIsInCommand(userInputMessage);
 
         } else if (userInputMessage.contains(MessageType.ATTACK.getShortValue())) {
 
-            processActionCommand(client, userInputMessage, MessageType.ATTACK);
+            processActionCommand(userInputMessage, MessageType.ATTACK);
 
-        } else if(userInputMessage.contains(MessageType.DEFENSE.getShortValue())) {
+        } else if (userInputMessage.contains(MessageType.STATISTIC.getShortValue())) {
 
-            processActionCommand(client, userInputMessage, MessageType.DEFENSE);
-        }
-        else {
-            client.sendMessage(new ChatMessage(MessageType.MESSAGE, userInputMessage));
+            displayWarriorStatistic();
+        } else if (userInputMessage.contains(MessageType.DEFENSE.getShortValue())) {
+
+            processActionCommand( userInputMessage, MessageType.DEFENSE);
+        } else {
+            sendMessage(new ChatMessage(MessageType.MESSAGE, userInputMessage));
         }
         return false;
     }
 
+    private void loadWarrior(String message) {
+        String path = extractValue(message);
 
+        if (StringUtils.isNotBlank(path)) {
+            try {
+                Warrior warrior = XmlUtil.readWarriorFromFile(path);
 
-    private static ConnectionInformation createConnectionInformation(String[] args) {
+                setWarrior(warrior);
 
-        ConnectionInformation connectionInformation = new ConnectionInformation();
-        switch (args.length) {
-            // > javac Client username portNumber serverAddr
-            case 3:
-                connectionInformation.setServerAddress(args[2]);
-                // > javac Client username portNumber
-            case 2:
-                try {
-                    connectionInformation.setPortNumber(Integer.parseInt(args[1]));
-                } catch (Exception e) {
-                    DisplayUtil.displayInvalidPortNumberMessage();
-                    return null;
-                }
-                // > javac Client username
-            case 1:
-                connectionInformation.setUserName(args[0]);
-                // > java Client
-            case 0:
-                break;
-            // invalid number of arguments
-            default:
-                DisplayUtil.displayInvalidArgument();
-                return null;
+                DisplayUtil.displayEvent(String.format("warrior [%s] loaded.", warrior));
+
+                sendMessage(new ChatMessage(MessageType.LOAD_WARRIOR, "", warrior));
+            } catch (IOException e) {
+                DisplayUtil.displayEvent("error loading warrior. please check file.");
+            }
+        } else {
+            DisplayUtil.displayEvent("You need to specify the fully qualified path of the warrior.");
         }
 
-        return connectionInformation;
     }
 
+    private String extractValue(String message) {
+        String[] messageValue = StringUtils.strip(message).split(" ");
 
-    private static void processWhoIsInCommand(WarriorClient client, String userInputMessage) {
+        if (messageValue.length > 1) {
+            System.out.println(messageValue[1]);
+            return messageValue[1];
+        } else {
+            return "";
+        }
+    }
+
+    private void processWhoIsInCommand(String userInputMessage) {
         String warriorName = extractValue(userInputMessage);
 
-        client.sendMessage(new ChatMessage(MessageType.WHOISIN, warriorName));
+        sendMessage(new ChatMessage(MessageType.WHOISIN, warriorName));
+    }
+
+    private void processActionCommand(String userInputMessage, MessageType messageType) {
+
+        if (getWarrior() == null) {
+            DisplayUtil.displayWarriorNotFound();
+            return;
+        }
+
+        ActionMessage actionMessage = extractActionMessage(userInputMessage);
+
+        if (actionMessage != null) {
+
+            if (isAttackMessageValid(actionMessage, messageType)) {
+                sendMessage(new ChatMessage(messageType, actionMessage));
+            }
+
+        } else {
+            DisplayUtil.displayInvalidUseOfAttackCommand();
+        }
+    }
+
+    private ActionMessage extractActionMessage(String message) {
+        String[] messageValue = StringUtils.strip(message).split(" ");
+
+        if (messageValue.length > 3) {
+            int attackPoint = getWarrior().findAttackPoint(messageValue[3]);
+            return new ActionMessage(messageValue[1], messageValue[2], messageValue[3], attackPoint);
+        } else {
+            return null;
+        }
+
     }
 
 
-    private static void processActionCommand(WarriorClient client, String userInputMessage, MessageType messageType) {
-
-        if (warrior == null) {
-              DisplayUtil.displayWarriorNotFound();
-              return;
-          }
-
-          ActionMessage actionMessage = extractActionMessage(userInputMessage);
-
-          if (actionMessage != null) {
-
-              if (isAttackMessageValid(client, actionMessage, messageType)) {
-                  client.sendMessage(new ChatMessage(messageType, actionMessage));
-              }
-
-          } else {
-              DisplayUtil.displayInvalidUseOfAttackCommand();
-          }
-    }
-
-
-
-    private static boolean isAttackMessageValid(WarriorClient client, ActionMessage actionMessage,  MessageType messageType) {
+    private boolean isAttackMessageValid(ActionMessage actionMessage, MessageType messageType) {
 
         boolean isActionAvailable = isActionAvailable(actionMessage, messageType);
 
 
-        if (StringUtils.equals(actionMessage.getPlayerName(), client.username)) {
+        if (StringUtils.equals(actionMessage.getPlayerName(), getUsername())) {
 
             DisplayUtil.displayCannotDoActionError(messageType);
 
             return false;
-
         }
 
         if (!isActionAvailable) {
@@ -263,81 +231,16 @@ public class WarriorClient {
         return true;
     }
 
-    private static boolean isActionAvailable(ActionMessage actionMessage, MessageType messageType) {
-        return messageType == MessageType.ATTACK ? warrior.isAttackAvailable(actionMessage.getActionName()) : warrior.isDefenseAvailable(actionMessage.getActionName());
+
+    private boolean isActionAvailable(ActionMessage actionMessage, MessageType messageType) {
+        return messageType == MessageType.ATTACK ? getWarrior().isAttackAvailable(actionMessage.getActionName()) : getWarrior().isDefenseAvailable(actionMessage.getActionName());
     }
 
-
-    private static void loadWarrior(WarriorClient client, String message) {
-        String path = extractValue(message);
-
-        if (StringUtils.isNotBlank(path)) {
-            try {
-                warrior = XmlUtil.readWarriorFromFile(path);
-
-                DisplayUtil.displayEvent(String.format("warrior [%s] loaded.", warrior));
-
-                client.sendMessage(new ChatMessage(MessageType.LOAD_WARRIOR, "", warrior));
-            } catch (IOException e) {
-                DisplayUtil.displayEvent("error loading warrior. please check file.");
-            }
-        } else {
-            DisplayUtil.displayEvent("You need to specify the fully qualified path of the warrior.");
+    private  void displayWarriorStatistic() {
+        if(warrior != null) {
+            DisplayUtil.displayEvent(warrior.toString());
         }
-
+        DisplayUtil.displayEvent("You have not loaded any warrior.");
     }
 
-    private static ActionMessage extractActionMessage(String message) {
-        String[] messageValue = StringUtils.strip(message).split(" ");
-
-        if (messageValue.length > 3) {
-            int attackPoint = warrior.findAttackPoint(messageValue[3]);
-            return new ActionMessage(messageValue[1], messageValue[2], messageValue[3], attackPoint);
-        } else {
-            return null;
-        }
-
-
-    }
-
-    private static String extractValue(String message) {
-        String[] messageValue = StringUtils.strip(message).split(" ");
-
-        if (messageValue.length > 1) {
-            System.out.println(messageValue[1]);
-            return messageValue[1];
-        } else {
-            return "";
-        }
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-
-    class ListenFromServer extends Thread {
-
-        private String promptName;
-
-        public ListenFromServer(String username) {
-            this.promptName = username;
-        }
-
-        public void run() {
-            while (true) {
-                try {
-                    ChatMessage chatMessage = (ChatMessage) inputStream.readObject();
-
-                    System.out.println(chatMessage.getMessage());
-                    DisplayUtil.displayPrompt(this.promptName);
-
-                } catch (Exception e) {
-                    System.out.println("Server has close the connection: " + e);
-                    break;
-                }
-            }
-        }
-    }
 }
-

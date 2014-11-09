@@ -115,7 +115,7 @@
                     <execution>
                         <id>warrior-client</id>
                         <configuration>
-                            <mainClass>com.ahujalimtamayo.project.client.WarriorClient</mainClass>
+                            <mainClass>com.ahujalimtamayo.project.client.ClientEntryPoint</mainClass>
                             <attachToBuild>true</attachToBuild>
                             <filename>warrior-client.jar</filename>
                             <!-- Optional -->

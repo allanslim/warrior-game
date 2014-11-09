@@ -18,6 +18,7 @@ public class WarriorClient {
     private String username;
     private int port;
     private Warrior warrior;
+    ServerListenerThread serverListener;
 
     public WarriorClient(ConnectionInformation connectionInformation) {
         this.server = connectionInformation.getServerAddress();
@@ -27,7 +28,6 @@ public class WarriorClient {
 
     public boolean initialize() {
 
-        ServerListenerThread serverListener = null;
         try {
             initializeSocket();
 
@@ -102,6 +102,7 @@ public class WarriorClient {
 
     public void setWarrior(Warrior warrior) {
         this.warrior = warrior;
+        serverListener.setWarrior(warrior);
     }
 
 
@@ -130,9 +131,10 @@ public class WarriorClient {
         } else if (userInputMessage.contains(MessageType.STATISTIC.getShortValue())) {
 
             displayWarriorStatistic();
-        } else if (userInputMessage.contains(MessageType.DEFENSE.getShortValue())) {
+        } else if(userInputMessage.contains(MessageType.HIT.getShortValue())) {
 
-            processActionCommand( userInputMessage, MessageType.DEFENSE);
+                processActionCommand(userInputMessage, MessageType.DEFENSE);
+
         } else {
             sendMessage(new ChatMessage(MessageType.MESSAGE, userInputMessage));
         }

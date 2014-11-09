@@ -146,7 +146,10 @@ public class ClientThread extends Thread {
         }
 
         sendMessageToClient(targetClientThread, actionMessage);
+        sendHitMessageToClient(targetClientThread, actionMessage);
     }
+
+
 
     private ClientThread findClient(ActionMessage actionMessage) {
 
@@ -161,24 +164,31 @@ public class ClientThread extends Thread {
         return null;
     }
 
+    private void sendHitMessageToClient(ClientThread targetClientThread, ActionMessage actionMessage) {
+        ChatMessage chatMessage = new ChatMessage(MessageType.HIT, actionMessage);
+
+        sendToClient(targetClientThread, chatMessage, actionMessage.getPlayerName());
+    }
+
 
     private synchronized void sendMessageToClient(ClientThread targetClientThread, ActionMessage actionMessage) {
 
-
         String message = actionMessage.getPlayerName() + " is attacking your warrior " + actionMessage.getWarriorName() + " with " + actionMessage.getActionName();
-
 
         ChatMessage chatMessage = new ChatMessage(MessageType.MESSAGE, message);
 
+        sendToClient(targetClientThread, chatMessage, actionMessage.getPlayerName());
+
+    }
+
+    private synchronized  void sendToClient(ClientThread targetClientThread, ChatMessage chatMessage, String playername) {
 
         if(targetClientThread != null && !targetClientThread.writeMsg(chatMessage)) {
 
-            removeClientThreadFromListByIdByPlayerName(actionMessage.getPlayerName());
+            removeClientThreadFromListByIdByPlayerName(playername);
 
             DisplayUtil.displayEvent("Disconnected Client " + targetClientThread.username + " removed from list.");
         }
-
-
     }
 
     private void removeClientThreadFromListByIdByPlayerName(String playerName) {

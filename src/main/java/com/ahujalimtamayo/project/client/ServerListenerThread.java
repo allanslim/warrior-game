@@ -1,8 +1,7 @@
 package com.ahujalimtamayo.project.client;
 
-import com.ahujalimtamayo.project.common.ChatMessage;
-import com.ahujalimtamayo.project.common.DisplayUtil;
-import com.ahujalimtamayo.project.common.MessageSendingException;
+import com.ahujalimtamayo.project.common.*;
+import com.ahujalimtamayo.project.model.Warrior;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,6 +9,7 @@ import java.io.ObjectOutputStream;
 
 public class ServerListenerThread extends Thread {
 
+    Warrior warrior;
     private String username;
     private ObjectInputStream inputStream;
     private ObjectOutputStream outputStream;
@@ -20,22 +20,38 @@ public class ServerListenerThread extends Thread {
         this.inputStream = inputStream;
         this.outputStream = outputStream;
         isRunning = true;
+
         sendUsernameToServer();
     }
+
 
     @Override
     public void run() {
         while (isRunning) {
-            try {
-                ChatMessage chatMessage = (ChatMessage) inputStream.readObject();
+         try {
+            ChatMessage chatMessage = (ChatMessage) inputStream.readObject();
+            switch (chatMessage.getMessageType()) {
 
-                System.out.println(chatMessage.getMessage());
-                DisplayUtil.displayPrompt(username);
+                case MESSAGE:
+                    DisplayUtil.displayEvent(chatMessage.getMessage());
+                    DisplayUtil.displayPrompt(username);
+                    break;
+                case HIT:
+                    ActionMessage actionMessage = chatMessage.getActionMessage();
+                    warrior.reduceHealthPoints(actionMessage.getActionPoint());
+                    break;
+                case PROTECTED:
+//                    ActionMessage actionMessage = chatMessage.getActionMessage();
+//                    warrior.reduceHealthPoints(actionMessage.getActionPoint());
+                    break;
 
-            } catch (Exception e) {
-                System.out.println("Server has close the connection: " + e);
-                break;
             }
+        } catch (Exception e) {
+             System.out.println("Server has close the connection: " + e);
+             break;
+        }
+
+
         }
     }
 
@@ -49,5 +65,9 @@ public class ServerListenerThread extends Thread {
 
     public void setRunning(boolean isRunning) {
         this.isRunning = isRunning;
+    }
+
+    public void setWarrior(Warrior warrior) {
+        this.warrior = warrior;
     }
 }

@@ -8,6 +8,8 @@ public enum MessageType {
     HELP("\\help"),
     ATTACK("\\attack"),
     STATISTIC("\\stat"),
+    HIT("\\hit"),
+    PROTECTED("\\protected"),
     DEFENSE("\\defense");
 
     private String shortValue;

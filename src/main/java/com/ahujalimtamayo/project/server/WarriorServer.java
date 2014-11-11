@@ -12,7 +12,7 @@ public class WarriorServer {
 
     private static int UNIQUE_ID_PER_CONNECTION;
 
-    private ArrayList<ClientThread> clientThreads = new ArrayList<ClientThread>();
+    private ArrayList<ServerThread> serverThreads = new ArrayList<ServerThread>();
 
     private SimpleDateFormat displayTime = new SimpleDateFormat("HH:mm:ss");
 
@@ -41,10 +41,10 @@ public class WarriorServer {
                 if (!keepGoing)
                     break;
 
-                ClientThread clientThread = new ClientThread(socket, ++UNIQUE_ID_PER_CONNECTION, clientThreads);
-                clientThreads.add(clientThread);
+                ServerThread serverThread = new ServerThread(socket, ++UNIQUE_ID_PER_CONNECTION, serverThreads);
+                serverThreads.add(serverThread);
 
-                clientThread.start();
+                serverThread.start();
             }
 
             // I was asked to stop
@@ -60,9 +60,9 @@ public class WarriorServer {
         try {
             serverSocket.close();
 
-            for (int i = 0; i < clientThreads.size(); ++i) {
-                ClientThread clientThread = clientThreads.get(i);
-                clientThread.closeAllResource();
+            for (int i = 0; i < serverThreads.size(); ++i) {
+                ServerThread serverThread = serverThreads.get(i);
+                serverThread.closeAllResource();
             }
         } catch (Exception e) {
             DisplayUtil.displayEvent("Exception closing the server and clients: " + e);

@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-public class ClientThread extends Thread {
+public class ServerThread extends Thread {
 
     private Socket socket;
 
@@ -31,17 +31,17 @@ public class ClientThread extends Thread {
 
     private Warrior warrior;
 
-    private List<ClientThread> clientThreads;
+    private List<ServerThread> serverThreads;
 
     private volatile boolean isRunning = true;
 
     private SimpleDateFormat displayTime = new SimpleDateFormat("HH:mm:ss");
 
 
-    public ClientThread(Socket socket, int threadId, List<ClientThread> clientThreads) throws IOException, ClassNotFoundException {
+    public ServerThread(Socket socket, int threadId, List<ServerThread> serverThreads) throws IOException, ClassNotFoundException {
         this.socket = socket;
         this.threadId = threadId;
-        this.clientThreads = clientThreads;
+        this.serverThreads = serverThreads;
 
         initializeInputOutputStreams(socket);
 
@@ -112,11 +112,11 @@ public class ClientThread extends Thread {
 
     private synchronized  boolean doesWarriorExist(Warrior warrior) {
 
-        for (int i = clientThreads.size(); --i >= 0; ) {
-            ClientThread clientThread = clientThreads.get(i);
+        for (int i = serverThreads.size(); --i >= 0; ) {
+            ServerThread serverThread = serverThreads.get(i);
 
-            if(clientThread.getThreadId() != threadId) {
-                if(clientThread.getWarrior() != null && StringUtils.equals(clientThread.getWarrior().getName(), warrior.getName())) {
+            if(serverThread.getThreadId() != threadId) {
+                if(serverThread.getWarrior() != null && StringUtils.equals(serverThread.getWarrior().getName(), warrior.getName())) {
                     return true;
                 }
             }
@@ -133,8 +133,8 @@ public class ClientThread extends Thread {
 
         writeMsg(buildChatMessage("\n========= List of the users connected at " + displayTime.format(new Date()) + " =========\n" ));
 
-        for (int i = 0; i < clientThreads.size(); i++) {
-            ClientThread ct = clientThreads.get(i);
+        for (int i = 0; i < serverThreads.size(); i++) {
+            ServerThread ct = serverThreads.get(i);
 
             if (ct.warrior != null) {
 
@@ -158,56 +158,56 @@ public class ClientThread extends Thread {
 
         ActionMessage actionMessage = chatMessage.getActionMessage();
 
-        ClientThread targetClientThread = findClient(actionMessage);
+        ServerThread targetServerThread = findClient(actionMessage);
 
-        if(targetClientThread != null ) {
+        if(targetServerThread != null ) {
 
             if(messageType == MessageType.MESSAGE.ATTACK) {
-                targetClientThread.getWarrior().reduceHealthPoints(actionMessage.getActionPoint());
+                targetServerThread.getWarrior().reduceHealthPoints(actionMessage.getActionPoint());
             }else if(messageType == MessageType.DEFENSE) {
-                targetClientThread.getWarrior().addHealthPoints(actionMessage.getActionPoint());
+                targetServerThread.getWarrior().addHealthPoints(actionMessage.getActionPoint());
             }
 
         }
 
-        sendMessageToClient(targetClientThread, actionMessage, messageType);
+        sendMessageToClient(targetServerThread, actionMessage, messageType);
 
-        sendActionNotifyMessage(targetClientThread, actionMessage, messageType);
+        sendActionNotifyMessage(targetServerThread, actionMessage, messageType);
     }
 
 
 
-    private ClientThread findClient(ActionMessage actionMessage) {
+    private ServerThread findClient(ActionMessage actionMessage) {
 
-        for (int i = clientThreads.size(); --i >= 0; ) {
-            ClientThread clientThread = clientThreads.get(i);
+        for (int i = serverThreads.size(); --i >= 0; ) {
+            ServerThread serverThread = serverThreads.get(i);
 
-            Warrior currentWarrior = clientThread.getWarrior();
+            Warrior currentWarrior = serverThread.getWarrior();
 
             if(StringUtils.equals(currentWarrior.getName(), actionMessage.getWarriorName())) {
-                return clientThread;
+                return serverThread;
             }
         }
         return null;
     }
 
-    private void sendActionNotifyMessage(ClientThread targetClientThread, ActionMessage actionMessage, MessageType messageType) {
+    private void sendActionNotifyMessage(ServerThread targetServerThread, ActionMessage actionMessage, MessageType messageType) {
 
         MessageType actionNotifyMessageType = messageType == MessageType.ATTACK ? MessageType.ATTACK_NOTIFY : MessageType.DEFENSE_NOTIFY;
 
         ChatMessage chatMessage = new ChatMessage(actionNotifyMessageType, actionMessage);
 
-        sendToClient(targetClientThread, chatMessage,  targetClientThread.getUsername());
+        sendToClient(targetServerThread, chatMessage,  targetServerThread.getUsername());
     }
 
 
-    private synchronized void sendMessageToClient(ClientThread targetClientThread, ActionMessage actionMessage, MessageType messageType) {
+    private synchronized void sendMessageToClient(ServerThread targetServerThread, ActionMessage actionMessage, MessageType messageType) {
 
-        String message = extractActionMessage(targetClientThread.getUsername(), actionMessage, messageType);
+        String message = extractActionMessage(targetServerThread.getUsername(), actionMessage, messageType);
 
         ChatMessage chatMessage = new ChatMessage(MessageType.MESSAGE, message);
 
-        sendToClient(targetClientThread, chatMessage, targetClientThread.getUsername());
+        sendToClient(targetServerThread, chatMessage, targetServerThread.getUsername());
 
     }
 
@@ -221,23 +221,23 @@ public class ClientThread extends Thread {
         return message;
     }
 
-    private synchronized  void sendToClient(ClientThread targetClientThread, ChatMessage chatMessage, String playername) {
+    private synchronized  void sendToClient(ServerThread targetServerThread, ChatMessage chatMessage, String playername) {
 
-        if(targetClientThread != null && !targetClientThread.writeMsg(chatMessage)) {
+        if(targetServerThread != null && !targetServerThread.writeMsg(chatMessage)) {
 
             removeClientThreadFromListByIdByPlayerName(playername);
 
-            DisplayUtil.displayEvent("Disconnected Client " + targetClientThread.username + " removed from list.");
+            DisplayUtil.displayEvent("Disconnected Client " + targetServerThread.username + " removed from list.");
         }
     }
 
     private void removeClientThreadFromListByIdByPlayerName(String playerName) {
 
-        for (int i = clientThreads.size(); --i >= 0; ) {
-            ClientThread clientThread = clientThreads.get(i);
+        for (int i = serverThreads.size(); --i >= 0; ) {
+            ServerThread serverThread = serverThreads.get(i);
 
-            if(StringUtils.equals(clientThread.getUsername(), playerName)) {
-                clientThreads.remove(i);
+            if(StringUtils.equals(serverThread.getUsername(), playerName)) {
+                serverThreads.remove(i);
             }
         }
     }
@@ -247,9 +247,9 @@ public class ClientThread extends Thread {
 
         ChatMessage chatMessage = new ChatMessage(MessageType.WARRIOR_LOADED, "Warrior loaded successfully", warrior);
 
-        ClientThread clientThread = findClientById(getThreadId());
+        ServerThread serverThread = findClientById(getThreadId());
 
-        clientThread.writeMsg(chatMessage);
+        serverThread.writeMsg(chatMessage);
     }
 
     private synchronized void broadcastMessageToAllClients(String message) {
@@ -261,12 +261,12 @@ public class ClientThread extends Thread {
 
         // we loop in reverse order in case we would have to remove a Client
         // because it has disconnected
-        for (int i = clientThreads.size(); --i >= 0; ) {
-            ClientThread clientThread = clientThreads.get(i);
+        for (int i = serverThreads.size(); --i >= 0; ) {
+            ServerThread serverThread = serverThreads.get(i);
             // try to write to the Client if it fails removeClientThreadFromListById it from the list
-            if (!clientThread.writeMsg(chatMessage)) {
-                clientThreads.remove(i);
-                DisplayUtil.displayEvent("Disconnected Client " + clientThread.username + " removed from list.");
+            if (!serverThread.writeMsg(chatMessage)) {
+                serverThreads.remove(i);
+                DisplayUtil.displayEvent("Disconnected Client " + serverThread.username + " removed from list.");
             }
         }
     }
@@ -274,25 +274,25 @@ public class ClientThread extends Thread {
     // for a client who logoff using the LOGOUT message
     private synchronized void removeClientThreadFromListById(int id) {
 
-        for (int i = 0; i < clientThreads.size(); ++i) {
+        for (int i = 0; i < serverThreads.size(); ++i) {
 
-            ClientThread clientThread = clientThreads.get(i);
+            ServerThread serverThread = serverThreads.get(i);
             // found it
-            if (clientThread.threadId == id) {
-                clientThreads.remove(i);
+            if (serverThread.threadId == id) {
+                serverThreads.remove(i);
                 return;
             }
         }
     }
 
 
-    private synchronized ClientThread findClientById(int threadId) {
-        for (int i = 0; i < clientThreads.size(); ++i) {
+    private synchronized ServerThread findClientById(int threadId) {
+        for (int i = 0; i < serverThreads.size(); ++i) {
 
-            ClientThread clientThread = clientThreads.get(i);
+            ServerThread serverThread = serverThreads.get(i);
             // found it
-            if (clientThread.threadId == threadId) {
-                return clientThread;
+            if (serverThread.threadId == threadId) {
+                return serverThread;
             }
         }
         return null;

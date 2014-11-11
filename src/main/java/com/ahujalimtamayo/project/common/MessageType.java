@@ -5,11 +5,12 @@ public enum MessageType {
     MESSAGE("\\msg"),
     LOGOUT("\\logout"),
     LOAD_WARRIOR("\\lw"),
+    WARRIOR_LOADED("warrior-loaded"),
     HELP("\\help"),
     ATTACK("\\attack"),
     STATISTIC("\\stat"),
-    HIT("\\hit"),
-    PROTECTED("\\protected"),
+    ATTACK_NOTIFY("\\attack-notify"),
+    DEFENSE_NOTIFY("\\defense-notify"),
     DEFENSE("\\defense");
 
     private String shortValue;

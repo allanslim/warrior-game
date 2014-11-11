@@ -17,7 +17,6 @@ public class WarriorClient {
     private String server;
     private String username;
     private int port;
-    private Warrior warrior;
     ServerListenerThread serverListener;
 
     public WarriorClient(ConnectionInformation connectionInformation) {
@@ -96,15 +95,6 @@ public class WarriorClient {
         return username;
     }
 
-    public Warrior getWarrior() {
-        return warrior;
-    }
-
-    public void setWarrior(Warrior warrior) {
-        this.warrior = warrior;
-        serverListener.setWarrior(warrior);
-    }
-
 
     public boolean processInputMessage(String userInputMessage) {
         if (userInputMessage.equalsIgnoreCase(MessageType.LOGOUT.getShortValue())) {
@@ -131,9 +121,10 @@ public class WarriorClient {
         } else if (userInputMessage.contains(MessageType.STATISTIC.getShortValue())) {
 
             displayWarriorStatistic();
-        } else if(userInputMessage.contains(MessageType.HIT.getShortValue())) {
 
-                processActionCommand(userInputMessage, MessageType.DEFENSE);
+        } else if (userInputMessage.contains(MessageType.ATTACK_NOTIFY.getShortValue())) {
+
+            processActionCommand(userInputMessage, MessageType.DEFENSE);
 
         } else {
             sendMessage(new ChatMessage(MessageType.MESSAGE, userInputMessage));
@@ -148,13 +139,9 @@ public class WarriorClient {
             try {
                 Warrior warrior = XmlUtil.readWarriorFromFile(path);
 
-                setWarrior(warrior);
-
-                DisplayUtil.displayEvent(String.format("warrior [%s] loaded.", warrior));
-
                 sendMessage(new ChatMessage(MessageType.LOAD_WARRIOR, "", warrior));
             } catch (IOException e) {
-                DisplayUtil.displayEvent("error loading warrior. please check file.");
+                DisplayUtil.displayEvent("error loading warrior. please check the xml syntax of your file.");
             }
         } else {
             DisplayUtil.displayEvent("You need to specify the fully qualified path of the warrior.");
@@ -202,9 +189,9 @@ public class WarriorClient {
     private ActionMessage extractActionMessage(String message) {
         String[] messageValue = StringUtils.strip(message).split(" ");
 
-        if (messageValue.length > 3) {
-            int attackPoint = getWarrior().findAttackPoint(messageValue[3]);
-            return new ActionMessage(messageValue[1], messageValue[2], messageValue[3], attackPoint);
+        if (messageValue.length > 2) {
+            int attackPoint = getWarrior().findAttackPoint(messageValue[2]);
+            return new ActionMessage( messageValue[1], messageValue[2], attackPoint);
         } else {
             return null;
         }
@@ -217,7 +204,7 @@ public class WarriorClient {
         boolean isActionAvailable = isActionAvailable(actionMessage, messageType);
 
 
-        if (StringUtils.equals(actionMessage.getPlayerName(), getUsername())) {
+        if (StringUtils.equals(actionMessage.getWarriorName(), getWarrior().getName())) {
 
             DisplayUtil.displayCannotDoActionError(messageType);
 
@@ -239,10 +226,14 @@ public class WarriorClient {
     }
 
     private  void displayWarriorStatistic() {
-        if(warrior != null) {
-            DisplayUtil.displayEvent(warrior.toString());
+        if(getWarrior() != null) {
+            DisplayUtil.displayEvent(getWarrior().toString());
+        } else {
+            DisplayUtil.displayEvent("You have not loaded any warrior.");
         }
-        DisplayUtil.displayEvent("You have not loaded any warrior.");
     }
+
+
+    public Warrior getWarrior() { return serverListener.getWarrior(); }
 
 }

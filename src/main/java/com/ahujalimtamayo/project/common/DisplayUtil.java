@@ -8,7 +8,7 @@ import java.util.Date;
 public class DisplayUtil {
 
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("HH:mm:ss");
-    public static final String ATTACK_COMMAND_HELP = "\\attack <user name> <warrior name> <attack> - to attack a warrior.\n";
+    public static final String ATTACK_COMMAND_HELP = "\\attack <warrior name> <attack> - to attack a warrior.\n";
 
 
     public static void displayEvent(String message) {

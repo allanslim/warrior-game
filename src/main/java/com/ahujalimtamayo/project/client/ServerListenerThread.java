@@ -1,6 +1,9 @@
 package com.ahujalimtamayo.project.client;
 
-import com.ahujalimtamayo.project.common.*;
+import com.ahujalimtamayo.project.common.ActionMessage;
+import com.ahujalimtamayo.project.common.ChatMessage;
+import com.ahujalimtamayo.project.common.DisplayUtil;
+import com.ahujalimtamayo.project.common.MessageSendingException;
 import com.ahujalimtamayo.project.model.Warrior;
 
 import java.io.IOException;
@@ -9,7 +12,7 @@ import java.io.ObjectOutputStream;
 
 public class ServerListenerThread extends Thread {
 
-    Warrior warrior;
+    private Warrior warrior;
     private String username;
     private ObjectInputStream inputStream;
     private ObjectOutputStream outputStream;
@@ -28,31 +31,41 @@ public class ServerListenerThread extends Thread {
     @Override
     public void run() {
         while (isRunning) {
-         try {
-            ChatMessage chatMessage = (ChatMessage) inputStream.readObject();
-            switch (chatMessage.getMessageType()) {
+            try {
+                ChatMessage chatMessage = (ChatMessage) inputStream.readObject();
 
-                case MESSAGE:
-                    DisplayUtil.displayEvent(chatMessage.getMessage());
-                    DisplayUtil.displayPrompt(username);
-                    break;
-                case HIT:
-                    ActionMessage actionMessage = chatMessage.getActionMessage();
-                    warrior.reduceHealthPoints(actionMessage.getActionPoint());
-                    break;
-                case PROTECTED:
-//                    ActionMessage actionMessage = chatMessage.getActionMessage();
-//                    warrior.reduceHealthPoints(actionMessage.getActionPoint());
-                    break;
+                ActionMessage actionMessage = null;
+                switch (chatMessage.getMessageType()) {
 
+                    case MESSAGE:
+                        DisplayUtil.displayEvent(chatMessage.getMessage());
+                        DisplayUtil.displayPrompt(username);
+                        break;
+                    case ATTACK_NOTIFY:
+                        actionMessage = chatMessage.getActionMessage();
+                        warrior.reduceHealthPoints(actionMessage.getActionPoint());
+                        break;
+                    case DEFENSE_NOTIFY:
+                        actionMessage = chatMessage.getActionMessage();
+                        warrior.addHealthPoints(actionMessage.getActionPoint());
+                        break;
+                    case WARRIOR_LOADED:
+                        warrior = chatMessage.getWarrior();
+                        DisplayUtil.displayEvent(String.format("warrior [%s] loaded.", warrior));
+                        break;
+
+
+                }
+            } catch (Exception e) {
+                System.out.println("Server has close the connection: " + e);
+                break;
             }
-        } catch (Exception e) {
-             System.out.println("Server has close the connection: " + e);
-             break;
         }
+    }
 
-
-        }
+    private void attackDefenseResponse(ChatMessage chatMessage) {
+        ActionMessage actionMessage = chatMessage.getActionMessage();
+        warrior.addHealthPoints(actionMessage.getActionPoint());
     }
 
     private void sendUsernameToServer() throws MessageSendingException {
@@ -70,4 +83,6 @@ public class ServerListenerThread extends Thread {
     public void setWarrior(Warrior warrior) {
         this.warrior = warrior;
     }
+
+    public Warrior getWarrior() { return warrior; }
 }

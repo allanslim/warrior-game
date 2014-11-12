@@ -11,7 +11,8 @@ public enum MessageType {
     STATISTIC("\\stat"),
     ATTACK_NOTIFY("\\attack-notify"),
     DEFEND_NOTIFY("\\defend-notify"),
-    DEFEND("\\defend");
+    DEFEND("\\defend"),
+    WARRIOR_DEATH_NOTIFY("warrior-death-notify");
 
     private String shortValue;
 

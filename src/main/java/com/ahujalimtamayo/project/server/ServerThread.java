@@ -165,6 +165,15 @@ public class ServerThread extends Thread {
 
             if(messageType == MessageType.MESSAGE.ATTACK) {
                 targetServerThread.getWarrior().reduceHealthPoints(actionMessage.getActionPoint());
+
+                if(targetServerThread.getWarrior().isDead()) {
+
+                    sendToClient(targetServerThread, new ChatMessage(MessageType.WARRIOR_DEATH_NOTIFY, "Your warrior is dead."),  targetServerThread.getUsername());
+                    sendToClient(this, new ChatMessage(MessageType.MESSAGE,  String.format("You have won the fight against %s!",  targetServerThread.getWarrior().getName())), targetServerThread.getUsername());
+                    targetServerThread.setWarrior(null);
+                    return;
+                }
+
             }else if(messageType == MessageType.DEFEND) {
                 targetServerThread.getWarrior().addHealthPoints(actionMessage.getActionPoint());
             }

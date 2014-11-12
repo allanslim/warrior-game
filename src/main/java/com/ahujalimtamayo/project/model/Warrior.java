@@ -165,4 +165,7 @@ public class Warrior implements Serializable {
     }
 
 
+    public boolean isDead() {
+        return healthLevel.getCurrentHealth() <= 0;
+    }
 }

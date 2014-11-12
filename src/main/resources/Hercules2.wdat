@@ -1,0 +1,43 @@
+<Warrior>
+  <name>Hercules2</name>
+  <description>Man with Godlike strength.</description>
+  <healthLevel>
+    <currentHealth>1</currentHealth>
+  </healthLevel>
+  <placeOfOrigin>Greece</placeOfOrigin>
+  <attacks>
+    <attacks>
+      <name>kick</name>
+      <actionPoints>1</actionPoints>
+      <type>ATTACK</type>
+    </attacks>
+    <attacks>
+      <name>punch</name>
+      <actionPoints>1</actionPoints>
+      <type>ATTACK</type>
+    </attacks>
+    <attacks>
+      <name>Stab</name>
+      <actionPoints>3</actionPoints>
+      <type>ATTACK</type>
+    </attacks>
+  </attacks>
+  <defenses>
+    <defenses>
+      <name>parry</name>
+      <actionPoints>1</actionPoints>
+      <type>DEFENSE</type>
+    </defenses>
+    <defenses>
+      <name>sidestep</name>
+      <actionPoints>3</actionPoints>
+      <type>DEFENSE</type>
+    </defenses>
+    <defenses>
+      <name>block</name>
+      <actionPoints>3</actionPoints>
+      <type>DEFENSE</type>
+    </defenses>
+  </defenses>
+  <heathPoints>100</heathPoints>
+</Warrior>

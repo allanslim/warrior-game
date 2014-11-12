@@ -53,8 +53,10 @@ public class ServerListenerThread extends Thread {
                         warrior = chatMessage.getWarrior();
                         DisplayUtil.displayEvent(String.format("warrior [%s] loaded.", warrior));
                         break;
-
-
+                    case WARRIOR_DEATH_NOTIFY:
+                        DisplayUtil.displayEvent(String.format("warrior [%s] is dead.", warrior.getName()));
+                        warrior = null;
+                        break;
                 }
             } catch (Exception e) {
                 System.out.println("Server has close the connection: " + e);

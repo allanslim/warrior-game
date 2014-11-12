@@ -51,12 +51,6 @@ public class ServerThread extends Thread {
         dateInString = new Date().toString();
     }
 
-    private void initializeInputOutputStreams(Socket socket) throws IOException {
-        outputStream = new ObjectOutputStream(socket.getOutputStream());
-        inputStream = new ObjectInputStream(socket.getInputStream());
-    }
-
-
     @Override
     public void run() {
 
@@ -74,14 +68,7 @@ public class ServerThread extends Thread {
                         isRunning = false;
                         break;
                     case LOAD_WARRIOR:
-                        Warrior currentWarrior = chatMessage.getWarrior();
-                        if(!doesWarriorExist(currentWarrior)) {
-                            warrior = currentWarrior;
-                            sendWarriorLoadedMessage(warrior);
-                            broadcastMessageToAllClients(username + " loaded: " + warrior.getName());
-                        } else {
-                            sendWarriorAlreadyExistMessage(currentWarrior.getName());
-                        }
+                        processLoadWarrior(chatMessage);
                         break;
                     case ATTACK:
                         processAction(chatMessage, MessageType.ATTACK);
@@ -106,18 +93,37 @@ public class ServerThread extends Thread {
         closeAllResource();
     }
 
-    private synchronized void sendWarriorAlreadyExistMessage(String warriorName ) {
+    private void processLoadWarrior(ChatMessage chatMessage) {
+
+        Warrior currentWarrior = chatMessage.getWarrior();
+
+        if (!doesWarriorExist(currentWarrior)) {
+            warrior = currentWarrior;
+            sendWarriorLoadedMessage(warrior);
+            broadcastMessageToAllClients(username + " loaded: " + warrior.getName());
+        } else {
+            sendWarriorAlreadyExistMessage(currentWarrior.getName());
+        }
+    }
+
+    private void initializeInputOutputStreams(Socket socket) throws IOException {
+        outputStream = new ObjectOutputStream(socket.getOutputStream());
+        inputStream = new ObjectInputStream(socket.getInputStream());
+    }
+
+
+    private synchronized void sendWarriorAlreadyExistMessage(String warriorName) {
         ChatMessage chatMessage = new ChatMessage(MessageType.MESSAGE, "A player already loaded a Warrior with this name: [" + warriorName + "]. Please choose a different warrior.");
         writeMsg(chatMessage);
     }
 
-    private synchronized  boolean doesWarriorExist(Warrior warrior) {
+    private synchronized boolean doesWarriorExist(Warrior warrior) {
 
         for (int i = serverThreads.size(); --i >= 0; ) {
             ServerThread serverThread = serverThreads.get(i);
 
-            if(serverThread.getThreadId() != threadId) {
-                if(serverThread.getWarrior() != null && StringUtils.equals(serverThread.getWarrior().getName(), warrior.getName())) {
+            if (serverThread.getThreadId() != threadId) {
+                if (serverThread.getWarrior() != null && StringUtils.equals(serverThread.getWarrior().getName(), warrior.getName())) {
                     return true;
                 }
             }
@@ -126,71 +132,63 @@ public class ServerThread extends Thread {
     }
 
 
-    public void setRunning(boolean isRunning) {
-        this.isRunning = isRunning;
-    }
-
     private void displayWarriorInfo(String warriorName) {
 
-        writeMsg(buildChatMessage("\n========= List of the users connected at " + displayTime.format(new Date()) + " =========\n" ));
+        writeMsg(buildChatMessage(String.format("\n========= List of the users connected at %s =========\n", displayTime.format(new Date()))));
 
         for (int i = 0; i < serverThreads.size(); i++) {
-            ServerThread ct = serverThreads.get(i);
+            ServerThread serverThread = serverThreads.get(i);
 
-            if (ct.warrior != null) {
+            if (serverThread.warrior != null) {
 
-                writeMsg(buildChatMessage(((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString + " has Warrior: " + ct.warrior.getName() + "\n")));
+                writeMsg(buildChatMessage((String.format("%s) User: %s connected since %s has Warrior: %s\n", i + 1, serverThread.username, serverThread.dateInString, serverThread.warrior.getName()))));
 
-                if (StringUtils.equals(ct.warrior.getName(), warriorName)) {
-                    writeMsg(buildChatMessage(ct.warrior.toString()));
+                if (StringUtils.equals(serverThread.warrior.getName(), warriorName)) {
+                    writeMsg(buildChatMessage(serverThread.warrior.toString()));
                 }
             } else {
-                writeMsg(buildChatMessage((i + 1) + ") User:" + ct.username + " connected since " + ct.dateInString));
+                writeMsg(buildChatMessage(String.format("%s) User: %s connected since %s", i + 1, serverThread.username, serverThread.dateInString)));
             }
-
         }
     }
 
-    private ChatMessage buildChatMessage(String message) {
-        return new ChatMessage(MessageType.MESSAGE, message) ;
-    }
-
-    private void processAction(ChatMessage chatMessage,  MessageType messageType) {
+    private void processAction(ChatMessage chatMessage, MessageType messageType) {
 
         ActionMessage actionMessage = chatMessage.getActionMessage();
 
         ServerThread targetServerThread = getTargetThread(messageType, actionMessage);
 
-        if(targetServerThread != null ) {
+        if (targetServerThread != null) {
 
-            if(messageType == MessageType.MESSAGE.ATTACK) {
+            if (messageType == MessageType.MESSAGE.ATTACK) {
                 targetServerThread.getWarrior().reduceHealthPoints(actionMessage.getActionPoint());
 
-                if(targetServerThread.getWarrior().isDead()) {
+                if (targetServerThread.getWarrior().isDead()) {
 
-                    sendToClient(targetServerThread, new ChatMessage(MessageType.WARRIOR_DEATH_NOTIFY, "Your warrior is dead."),  targetServerThread.getUsername());
-                    sendToClient(this, new ChatMessage(MessageType.MESSAGE,  String.format("You have won the fight against %s!",  targetServerThread.getWarrior().getName())), targetServerThread.getUsername());
+                    sendToClient(targetServerThread, new ChatMessage(MessageType.WARRIOR_DEATH_NOTIFY, "Your warrior is dead."), targetServerThread.getUsername());
+                    sendToClient(this, new ChatMessage(MessageType.MESSAGE, String.format("You have won the fight against %s!", targetServerThread.getWarrior().getName())), targetServerThread.getUsername());
                     targetServerThread.setWarrior(null);
                     return;
                 }
 
-            }else if(messageType == MessageType.DEFEND) {
+            } else if (messageType == MessageType.DEFEND) {
                 targetServerThread.getWarrior().addHealthPoints(actionMessage.getActionPoint());
             }
 
         }
 
 
-        sendMessageToClient( actionMessage, messageType);
+        sendMessageToClient(actionMessage, messageType);
 
         sendActionNotifyMessage(targetServerThread, actionMessage, messageType);
     }
 
+
     private ServerThread getTargetThread(MessageType messageType, ActionMessage actionMessage) {
         ServerThread targetServerThread = null;
-        if(messageType == MessageType.ATTACK) {
+        if (messageType == MessageType.ATTACK) {
             targetServerThread = findClient(actionMessage);
-        }else if(messageType == MessageType.DEFEND) {
+        } else if (messageType == MessageType.DEFEND) {
             targetServerThread = this;
         }
         return targetServerThread;
@@ -204,7 +202,7 @@ public class ServerThread extends Thread {
 
             Warrior currentWarrior = serverThread.getWarrior();
 
-            if(StringUtils.equals(currentWarrior.getName(), actionMessage.getWarriorName())) {
+            if (StringUtils.equals(currentWarrior.getName(), actionMessage.getWarriorName())) {
                 return serverThread;
             }
         }
@@ -217,15 +215,15 @@ public class ServerThread extends Thread {
 
         ChatMessage chatMessage = new ChatMessage(actionNotifyMessageType, actionMessage);
 
-        sendToClient(targetServerThread, chatMessage,  targetServerThread.getUsername());
+        sendToClient(targetServerThread, chatMessage, targetServerThread.getUsername());
     }
 
 
     private synchronized void sendMessageToClient(ActionMessage actionMessage, MessageType messageType) {
 
-        ServerThread targetServerThread  = findClient(actionMessage);
+        ServerThread targetServerThread = findClient(actionMessage);
 
-        String message = extractActionMessage( actionMessage, messageType);
+        String message = extractActionMessage(actionMessage, messageType);
 
         ChatMessage chatMessage = new ChatMessage(MessageType.MESSAGE, message);
 
@@ -233,23 +231,26 @@ public class ServerThread extends Thread {
 
     }
 
-    private String extractActionMessage( ActionMessage actionMessage, MessageType messageType) {
+    private String extractActionMessage(ActionMessage actionMessage, MessageType messageType) {
         String message = "";
-        if(messageType == MessageType.ATTACK) {
-            message = actionMessage.getWarriorName() + " is attacking your warrior " + getWarrior().getName() + " with " + actionMessage.getActionName();
-        }else if(messageType == MessageType.DEFEND) {
-            message = this.getWarrior().getName() + " is defending from your attack  with " + actionMessage.getActionName();
+        if (messageType == MessageType.ATTACK) {
+
+            message = String.format("%s is attacking your warrior %s with %s", actionMessage.getWarriorName(), getWarrior().getName(), actionMessage.getActionName() );
+
+        } else if (messageType == MessageType.DEFEND) {
+
+            message = String.format("%s is defending from your attack with %s ",  this.getWarrior().getName(), actionMessage.getActionName());
         }
         return message;
     }
 
-    private synchronized  void sendToClient(ServerThread targetServerThread, ChatMessage chatMessage, String playername) {
+    private synchronized void sendToClient(ServerThread targetServerThread, ChatMessage chatMessage, String playername) {
 
-        if(targetServerThread != null && !targetServerThread.writeMsg(chatMessage)) {
+        if (targetServerThread != null && !targetServerThread.writeMsg(chatMessage)) {
 
             removeClientThreadFromListByIdByPlayerName(playername);
 
-            DisplayUtil.displayEvent("Disconnected Client " + targetServerThread.username + " removed from list.");
+            DisplayUtil.displayEvent(String.format("Disconnected client %s removed from list.", targetServerThread.username));
         }
     }
 
@@ -258,7 +259,7 @@ public class ServerThread extends Thread {
         for (int i = serverThreads.size(); --i >= 0; ) {
             ServerThread serverThread = serverThreads.get(i);
 
-            if(StringUtils.equals(serverThread.getUsername(), playerName)) {
+            if (StringUtils.equals(serverThread.getUsername(), playerName)) {
                 serverThread.closeAllResource();
                 serverThreads.remove(i);
             }
@@ -289,7 +290,8 @@ public class ServerThread extends Thread {
             // try to write to the Client if it fails removeClientThreadFromListById it from the list
             if (!serverThread.writeMsg(chatMessage)) {
                 serverThreads.remove(i);
-                DisplayUtil.displayEvent("Disconnected Client " + serverThread.username + " removed from list.");
+
+                DisplayUtil.displayEvent(String.format("Disconnected client %s removed from list.", serverThread.username));
             }
         }
     }
@@ -353,15 +355,18 @@ public class ServerThread extends Thread {
         return true;
     }
 
+    private ChatMessage buildChatMessage(String message) {
+        return new ChatMessage(MessageType.MESSAGE, message);
+    }
+
+
     public String getUsername() {
         return username;
     }
 
     public Warrior getWarrior() { return warrior; }
 
-    public void setWarrior(Warrior warrior) {
-        this.warrior = warrior;
-    }
+    public void setWarrior(Warrior warrior) { this.warrior = warrior; }
 
     public int getThreadId() { return threadId; }
 }

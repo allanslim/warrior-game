@@ -42,6 +42,7 @@ public class WarriorServer {
                     break;
 
                 ServerThread serverThread = new ServerThread(socket, ++UNIQUE_ID_PER_CONNECTION, serverThreads);
+
                 serverThreads.add(serverThread);
 
                 serverThread.start();

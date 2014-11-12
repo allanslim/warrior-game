@@ -64,8 +64,9 @@ public class WarriorClient {
     private void initializeSocket() throws ServerConnectionErrorException {
         try {
             socket = new Socket(server, port);
-            String msg = "Connection accepted " + socket.getInetAddress() + ":" + socket.getPort();
-            System.out.println(msg);
+
+            System.out.println(String.format("Connection accepted %s : %s", socket.getInetAddress(), socket.getPort()));
+
         } catch (IOException e) {
             throw new ServerConnectionErrorException();
         }

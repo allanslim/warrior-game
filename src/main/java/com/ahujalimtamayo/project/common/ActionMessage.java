@@ -13,14 +13,19 @@ public class ActionMessage implements Serializable {
         this.actionPoint = actionPoint;
     }
 
-    public ActionMessage(String actionName, int actionPoint) {
-        this.actionName = actionName;
-        this.actionPoint = actionPoint;
-    }
 
     public String getWarriorName() { return warriorName; }
 
     public String getActionName() { return actionName; }
 
     public int getActionPoint() { return actionPoint; }
+
+    @Override
+    public String toString() {
+        return "ActionMessage{" +
+                "warriorName='" + warriorName + '\'' +
+                ", actionName='" + actionName + '\'' +
+                ", actionPoint=" + actionPoint +
+                '}';
+    }
 }

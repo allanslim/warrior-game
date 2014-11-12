@@ -88,6 +88,7 @@ public class ServerThread extends Thread {
                         break;
                     case DEFEND:
                         processAction(chatMessage, MessageType.DEFEND);
+                        break;
                     case WHOISIN:
                         displayWarriorInfo(chatMessage.getMessage());
                         break;
@@ -158,7 +159,7 @@ public class ServerThread extends Thread {
 
         ActionMessage actionMessage = chatMessage.getActionMessage();
 
-        ServerThread targetServerThread = findClient(actionMessage);
+        ServerThread targetServerThread = getTargetThread(messageType, actionMessage);
 
         if(targetServerThread != null ) {
 
@@ -170,11 +171,21 @@ public class ServerThread extends Thread {
 
         }
 
-        sendMessageToClient(targetServerThread, actionMessage, messageType);
+
+        sendMessageToClient( actionMessage, messageType);
 
         sendActionNotifyMessage(targetServerThread, actionMessage, messageType);
     }
 
+    private ServerThread getTargetThread(MessageType messageType, ActionMessage actionMessage) {
+        ServerThread targetServerThread = null;
+        if(messageType == MessageType.ATTACK) {
+            targetServerThread = findClient(actionMessage);
+        }else if(messageType == MessageType.DEFEND) {
+            targetServerThread = this;
+        }
+        return targetServerThread;
+    }
 
 
     private ServerThread findClient(ActionMessage actionMessage) {
@@ -201,7 +212,9 @@ public class ServerThread extends Thread {
     }
 
 
-    private synchronized void sendMessageToClient(ServerThread targetServerThread, ActionMessage actionMessage, MessageType messageType) {
+    private synchronized void sendMessageToClient(ActionMessage actionMessage, MessageType messageType) {
+
+        ServerThread targetServerThread  = findClient(actionMessage);
 
         String message = extractActionMessage( actionMessage, messageType);
 
@@ -237,6 +250,7 @@ public class ServerThread extends Thread {
             ServerThread serverThread = serverThreads.get(i);
 
             if(StringUtils.equals(serverThread.getUsername(), playerName)) {
+                serverThread.closeAllResource();
                 serverThreads.remove(i);
             }
         }
@@ -279,6 +293,7 @@ public class ServerThread extends Thread {
             ServerThread serverThread = serverThreads.get(i);
             // found it
             if (serverThread.threadId == id) {
+                closeAllResource();
                 serverThreads.remove(i);
                 return;
             }
@@ -301,6 +316,7 @@ public class ServerThread extends Thread {
 
     public void closeAllResource() {
         try {
+            setWarrior(null);
             if (outputStream != null) outputStream.close();
             if (inputStream != null) inputStream.close();
             if (socket != null) socket.close();
@@ -333,6 +349,10 @@ public class ServerThread extends Thread {
     }
 
     public Warrior getWarrior() { return warrior; }
+
+    public void setWarrior(Warrior warrior) {
+        this.warrior = warrior;
+    }
 
     public int getThreadId() { return threadId; }
 }

@@ -39,5 +39,15 @@ public class ChatMessage implements Serializable {
     public ActionMessage getActionMessage() {
         return actionMessage;
     }
+
+    @Override
+    public String toString() {
+        return "ChatMessage{" +
+                "messageType=" + messageType +
+                ", message='" + message + '\'' +
+                ", warrior=" + warrior +
+                ", actionMessage=" + actionMessage +
+                '}';
+    }
 }
 

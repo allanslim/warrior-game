@@ -45,7 +45,7 @@ public class ServerListenerThread extends Thread {
                         actionMessage = chatMessage.getActionMessage();
                         warrior.reduceHealthPoints(actionMessage.getActionPoint());
                         break;
-                    case DEFENSE_NOTIFY:
+                    case DEFEND_NOTIFY:
                         actionMessage = chatMessage.getActionMessage();
                         warrior.addHealthPoints(actionMessage.getActionPoint());
                         break;

@@ -118,19 +118,20 @@ public class WarriorClient {
 
             processActionCommand(userInputMessage, MessageType.ATTACK);
 
+        } else if (userInputMessage.contains(MessageType.DEFEND.getShortValue())) {
+
+            processActionCommand(userInputMessage, MessageType.DEFEND);
+
         } else if (userInputMessage.contains(MessageType.STATISTIC.getShortValue())) {
 
             displayWarriorStatistic();
-
-        } else if (userInputMessage.contains(MessageType.ATTACK_NOTIFY.getShortValue())) {
-
-            processActionCommand(userInputMessage, MessageType.DEFENSE);
 
         } else {
             sendMessage(new ChatMessage(MessageType.MESSAGE, userInputMessage));
         }
         return false;
     }
+
 
     private void loadWarrior(String message) {
         String path = extractValue(message);
@@ -166,6 +167,7 @@ public class WarriorClient {
         sendMessage(new ChatMessage(MessageType.WHOISIN, warriorName));
     }
 
+
     private void processActionCommand(String userInputMessage, MessageType messageType) {
 
         if (getWarrior() == null) {
@@ -173,7 +175,7 @@ public class WarriorClient {
             return;
         }
 
-        ActionMessage actionMessage = extractActionMessage(userInputMessage);
+        ActionMessage actionMessage = extractActionMessage(userInputMessage, messageType);
 
         if (actionMessage != null) {
 
@@ -186,16 +188,28 @@ public class WarriorClient {
         }
     }
 
-    private ActionMessage extractActionMessage(String message) {
+    private ActionMessage extractActionMessage(String message, MessageType messageType) {
         String[] messageValue = StringUtils.strip(message).split(" ");
 
         if (messageValue.length > 2) {
-            int attackPoint = getWarrior().findAttackPoint(messageValue[2]);
-            return new ActionMessage( messageValue[1], messageValue[2], attackPoint);
+            int attackPoint = extractActionPoints(messageType, messageValue[2]);
+
+            return new ActionMessage(messageValue[1], messageValue[2], attackPoint);
+
         } else {
             return null;
         }
 
+    }
+
+    private int extractActionPoints(MessageType messageType, String actionName) {
+        int attackPoint = 0;
+        if (messageType == MessageType.ATTACK) {
+            attackPoint = getWarrior().findAttackPoint(actionName);
+        } else if (messageType == MessageType.DEFEND) {
+            attackPoint = getWarrior().findDefensePoint(actionName);
+        }
+        return attackPoint;
     }
 
 
@@ -225,8 +239,8 @@ public class WarriorClient {
         return messageType == MessageType.ATTACK ? getWarrior().isAttackAvailable(actionMessage.getActionName()) : getWarrior().isDefenseAvailable(actionMessage.getActionName());
     }
 
-    private  void displayWarriorStatistic() {
-        if(getWarrior() != null) {
+    private void displayWarriorStatistic() {
+        if (getWarrior() != null) {
             DisplayUtil.displayEvent(getWarrior().toString());
         } else {
             DisplayUtil.displayEvent("You have not loaded any warrior.");

@@ -8,7 +8,8 @@ import java.util.Date;
 public class DisplayUtil {
 
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("HH:mm:ss");
-    public static final String ATTACK_COMMAND_HELP = "\\attack <warrior name> <attack> - to attack a warrior.\n";
+    public static final String ATTACK_COMMAND_HELP = "\\attack <warrior name to attack> <attack> - to attack a warrior.\n";
+    public static final String DEFEND_COMMAND_HELP = "\\defend <warrior name to defend from> <defense> - to defend your warrior.\n";
 
 
     public static void displayEvent(String message) {
@@ -25,7 +26,7 @@ public class DisplayUtil {
         helpMessageBuilder.append("\\lw <path> - to load your warrior from a file.\n");
         helpMessageBuilder.append("\\who - to display all warriors in the arena.\n");
         helpMessageBuilder.append("\\who <warrior> - to display the stats of the warrior.\n");
-
+        helpMessageBuilder.append(DEFEND_COMMAND_HELP);
         helpMessageBuilder.append(ATTACK_COMMAND_HELP);
         helpMessageBuilder.append(separator);
         return helpMessageBuilder.toString();
@@ -42,6 +43,10 @@ public class DisplayUtil {
 
     public static void displayInvalidUseOfAttackCommand() {
         System.out.println(ATTACK_COMMAND_HELP);
+    }
+
+    public static void displayInvalidUseOfDefendCommand() {
+        System.out.println(DEFEND_COMMAND_HELP);
     }
 
     public static void displayCannotDoActionError(MessageType messageType) {

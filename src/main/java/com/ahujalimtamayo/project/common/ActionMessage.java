@@ -13,6 +13,11 @@ public class ActionMessage implements Serializable {
         this.actionPoint = actionPoint;
     }
 
+    public ActionMessage(String actionName, int actionPoint) {
+        this.actionName = actionName;
+        this.actionPoint = actionPoint;
+    }
+
     public String getWarriorName() { return warriorName; }
 
     public String getActionName() { return actionName; }

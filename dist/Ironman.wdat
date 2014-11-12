@@ -17,7 +17,7 @@
       <type>ATTACK</type>
     </attacks>
     <attacks>
-      <name>ionic blast</name>
+      <name>ionic-blast</name>
       <actionPoints>3</actionPoints>
       <type>ATTACK</type>
     </attacks>

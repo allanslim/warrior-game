@@ -10,8 +10,8 @@ public enum MessageType {
     ATTACK("\\attack"),
     STATISTIC("\\stat"),
     ATTACK_NOTIFY("\\attack-notify"),
-    DEFENSE_NOTIFY("\\defense-notify"),
-    DEFENSE("\\defense");
+    DEFEND_NOTIFY("\\defend-notify"),
+    DEFEND("\\defend");
 
     private String shortValue;
 

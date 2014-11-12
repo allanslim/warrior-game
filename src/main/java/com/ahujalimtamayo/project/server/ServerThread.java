@@ -86,8 +86,8 @@ public class ServerThread extends Thread {
                     case ATTACK:
                         processAction(chatMessage, MessageType.ATTACK);
                         break;
-                    case DEFENSE:
-                        processAction(chatMessage, MessageType.DEFENSE);
+                    case DEFEND:
+                        processAction(chatMessage, MessageType.DEFEND);
                     case WHOISIN:
                         displayWarriorInfo(chatMessage.getMessage());
                         break;
@@ -164,7 +164,7 @@ public class ServerThread extends Thread {
 
             if(messageType == MessageType.MESSAGE.ATTACK) {
                 targetServerThread.getWarrior().reduceHealthPoints(actionMessage.getActionPoint());
-            }else if(messageType == MessageType.DEFENSE) {
+            }else if(messageType == MessageType.DEFEND) {
                 targetServerThread.getWarrior().addHealthPoints(actionMessage.getActionPoint());
             }
 
@@ -193,7 +193,7 @@ public class ServerThread extends Thread {
 
     private void sendActionNotifyMessage(ServerThread targetServerThread, ActionMessage actionMessage, MessageType messageType) {
 
-        MessageType actionNotifyMessageType = messageType == MessageType.ATTACK ? MessageType.ATTACK_NOTIFY : MessageType.DEFENSE_NOTIFY;
+        MessageType actionNotifyMessageType = messageType == MessageType.ATTACK ? MessageType.ATTACK_NOTIFY : MessageType.DEFEND_NOTIFY;
 
         ChatMessage chatMessage = new ChatMessage(actionNotifyMessageType, actionMessage);
 
@@ -203,7 +203,7 @@ public class ServerThread extends Thread {
 
     private synchronized void sendMessageToClient(ServerThread targetServerThread, ActionMessage actionMessage, MessageType messageType) {
 
-        String message = extractActionMessage(targetServerThread.getUsername(), actionMessage, messageType);
+        String message = extractActionMessage( actionMessage, messageType);
 
         ChatMessage chatMessage = new ChatMessage(MessageType.MESSAGE, message);
 
@@ -211,12 +211,12 @@ public class ServerThread extends Thread {
 
     }
 
-    private String extractActionMessage(String playername, ActionMessage actionMessage, MessageType messageType) {
+    private String extractActionMessage( ActionMessage actionMessage, MessageType messageType) {
         String message = "";
         if(messageType == MessageType.ATTACK) {
-            message = playername + " is attacking your warrior " + actionMessage.getWarriorName() + " with " + actionMessage.getActionName();
-        }else if(messageType == MessageType.DEFENSE) {
-            message = actionMessage.getActionName() + " is defending from your warrior " + actionMessage.getWarriorName() + "with " + actionMessage.getActionName();
+            message = actionMessage.getWarriorName() + " is attacking your warrior " + getWarrior().getName() + " with " + actionMessage.getActionName();
+        }else if(messageType == MessageType.DEFEND) {
+            message = this.getWarrior().getName() + " is defending from your attack  with " + actionMessage.getActionName();
         }
         return message;
     }

@@ -112,10 +112,10 @@ public class Warrior implements Serializable {
         return 0;
     }
 
-    private int findDefensePoint(String defenseName) {
-        for( Attack attack : attacks) {
-            if(StringUtils.equals(attack.getName(), defenseName)) {
-                return attack.getActionPoints();
+    public int findDefensePoint(String defenseName) {
+        for( Defense defense : defenses) {
+            if(StringUtils.equals(defense.getName(), defenseName)) {
+                return defense.getActionPoints();
             }
         }
         return 0;
@@ -163,4 +163,6 @@ public class Warrior implements Serializable {
         warriorBuilder.append(DISPLAY_SEPARATOR);
         return warriorBuilder.toString();
     }
+
+
 }

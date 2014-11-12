@@ -31,4 +31,4 @@ How to run the client:
 \> java -jar warrior-client.jar
 ```
 
-NOTE: If you just want to run the application without compiling, you can find the executable jars in dist/ directory.
+NOTE: If you just want to run the applications without compiling, you can find the executable jars in dist/ directory.

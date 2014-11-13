@@ -65,10 +65,6 @@ public class ServerListenerThread extends Thread {
         }
     }
 
-    private void attackDefenseResponse(ChatMessage chatMessage) {
-        ActionMessage actionMessage = chatMessage.getActionMessage();
-        warrior.addHealthPoints(actionMessage.getActionPoint());
-    }
 
     private void sendUsernameToServer() throws MessageSendingException {
         try {

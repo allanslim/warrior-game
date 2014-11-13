@@ -28,7 +28,7 @@ public class Warrior implements Serializable {
     public Warrior(String name, String description, HealthLevel healthLevel, String placeOfOrigin) {
         this.name = name;
         this.description = description;
-        healthLevel = healthLevel;
+        this.healthLevel = healthLevel;
     }
 
     public void setName(String name) {

@@ -29,7 +29,6 @@ public class WarriorServer {
     public void execute() {
 
         try {
-            // the socket used by the server
             ServerSocket serverSocket = new ServerSocket(port);
 
             while (keepGoing) {

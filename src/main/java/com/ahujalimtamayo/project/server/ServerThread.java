@@ -161,9 +161,9 @@ public class ServerThread extends Thread {
         if (targetServerThread != null) {
 
             if (messageType == MessageType.MESSAGE.ATTACK) {
-                targetServerThread.getWarrior().reduceHealthPoints(actionMessage.getActionPoint());
+                targetServerThread.reduceWarriorHealth(actionMessage.getActionPoint());
 
-                if (targetServerThread.getWarrior().isDead()) {
+                if (targetServerThread.isWarriorDead()) {
 
                     sendToClient(targetServerThread, new ChatMessage(MessageType.WARRIOR_DEATH_NOTIFY, "Your warrior is dead."), targetServerThread.getUsername());
                     sendToClient(this, new ChatMessage(MessageType.MESSAGE, String.format("You have won the fight against %s!", targetServerThread.getWarrior().getName())), targetServerThread.getUsername());
@@ -172,7 +172,7 @@ public class ServerThread extends Thread {
                 }
 
             } else if (messageType == MessageType.DEFEND) {
-                targetServerThread.getWarrior().addHealthPoints(actionMessage.getActionPoint());
+                targetServerThread.addWarriorHealth(actionMessage.getActionPoint());
             }
 
         }
@@ -354,6 +354,12 @@ public class ServerThread extends Thread {
         }
         return true;
     }
+
+    public void reduceWarriorHealth(int points) { getWarrior().reduceHealthPoints(points); }
+
+    public void addWarriorHealth(int points) { getWarrior().addHealthPoints(points); }
+
+    public boolean isWarriorDead() { return getWarrior().isDead(); }
 
     private ChatMessage buildChatMessage(String message) {
         return new ChatMessage(MessageType.MESSAGE, message);

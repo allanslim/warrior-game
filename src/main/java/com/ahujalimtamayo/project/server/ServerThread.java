@@ -33,7 +33,7 @@ public class ServerThread extends Thread {
 
     private List<ServerThread> serverThreads;
 
-    private volatile boolean isRunning = true;
+    private boolean isRunning = true;
 
     private SimpleDateFormat displayTime = new SimpleDateFormat("HH:mm:ss");
 

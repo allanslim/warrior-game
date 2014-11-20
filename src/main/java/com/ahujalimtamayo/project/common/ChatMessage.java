@@ -11,7 +11,7 @@ public class ChatMessage implements Serializable {
     private MessageType messageType;
     private String message;
     private Warrior warrior;
-    ActionMessage actionMessage;
+    private ActionMessage actionMessage;
 
 
     public ChatMessage(MessageType messageType, String message) {

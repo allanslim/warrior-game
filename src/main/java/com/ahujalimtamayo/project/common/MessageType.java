@@ -20,9 +20,6 @@ public enum MessageType {
         this.shortValue = shortValue;
     }
 
-    MessageType(String shortValue, int val) {
-
-    }
 
     public String getShortValue() { return shortValue; }
 }
